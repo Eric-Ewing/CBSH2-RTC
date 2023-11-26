@@ -773,6 +773,7 @@ bool CBSHeuristic::SyncMDDs(const MDD &mdd, const MDD& other) // assume mdd.leve
 			return false;
 		}
 	}
+	//TODO: Return copy?
 	copy.clear();
 	return true;
 }

@@ -743,6 +743,73 @@ string CBS::getSolverName() const
 	return name;
 }
 
+vector<int> DFS(boost::unordered_map<int, vector<int>> G, int i, bool visited[]){
+	int curr = i;
+	vector<int> component = vector<int>();
+	vector<int> open = vector<int> ();
+	open.push_back(curr);
+	while(!open.empty()){
+		curr = open.back();
+		open.pop_back();
+		if (visited[curr]){
+			continue;
+		}
+		component.push_back(curr);
+		visited[curr] = true;
+		for (int i = 0; i < G[curr].size(); i++){
+			if (!visited[G[curr][i]])
+				open.push_back(G[curr][i]);
+		}
+	}
+	return component;
+	
+}
+
+// int getNumComponents(boost::unordered_map<int, int> G){
+// 	int numComponents = 0;
+// 	int V = G.size();
+// 	bool* visited = new bool[V];
+// 	vector<vector<int>> components = vector<vector<int>>();
+// 	for (int i = 0; i < V; i++){
+// 		visited[i] = false;
+// 	}
+// 	for (int i = 0; i < V; i++){
+// 		if (visited[i] == false){
+// 			auto component = DFS(G, i, visited);
+// 			components.push_back(component);
+// 		}
+// 	}
+// 	numComponents = components.size();
+// 	return numComponents;
+// }
+
+vector<vector<int>> getComponents(boost::unordered_map<int, vector<int>> CG){
+	int numAgents = CG.size();
+	bool* visited = new bool[numAgents];
+	vector<vector<int>> components = vector<vector<int>> ();
+	for (int i = 0; i < numAgents; i++){
+		visited[i] = false;
+	}
+	for (int i = 0; i < numAgents; i++){
+		if (visited[i] == false){
+			auto component = DFS(CG, i, visited);
+			components.push_back(component);
+		}
+	}
+	return components;
+}
+
+void printComponents(vector<vector<int>> comps){
+	cout << comps.size() << endl;
+	for(int i = 0; i < comps.size(); i++){
+		cout << "Component " << i << ": ";
+		for(int j = 0; j < comps[i].size(); j++){
+			cout << comps[i][j] << ", ";
+		}
+		cout << endl;
+	}
+}
+
 bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 {
 	this->min_f_val = _cost_lowerbound;
@@ -778,6 +845,7 @@ bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 			break;
 		}
 		CBSNode* curr = focal_list.top();
+
 		focal_list.pop();
 		open_list.erase(curr->open_handle);
 		// takes the paths_found_initially and UPDATE all constrained paths found for agents from curr to dummy_start (and lower-bounds)
@@ -1044,6 +1112,42 @@ bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 				break;
 			}
 		}
+		// curr->printConflictGraph(paths.size());
+		boost::unordered_map<int, vector<int>> conflictGraph = boost::unordered_map<int, vector<int>> ();
+		for (int i = 0; i < search_engines.size(); i++){
+			if (conflictGraph.find(i) == conflictGraph.end()){
+				conflictGraph.insert({i, vector<int>()});
+			}
+			for(int j = i+1; j < paths.size(); j++){
+				int a1 = i;
+				int a2 = j;
+				auto mdda = mdd_helper.getMDD(*curr, a1, paths[a1]->size());
+				auto mddb = mdd_helper.getMDD(*curr, a2, paths[a2]->size());
+				auto mdd1 = new MDD(*mdda);
+				auto mdd2 = new MDD(*mddb);
+				if (heuristic_helper.SyncMDDs(*mdd1, *mdd2)){
+					if (conflictGraph.find(j) == conflictGraph.end()){
+						conflictGraph[j] = vector<int>();
+					}
+					conflictGraph[i].push_back(j);
+					conflictGraph[j].push_back(i);
+				}
+			}
+		}
+		
+		// for (auto itr = conflictGraph.begin(); itr != conflictGraph.end(); itr++){
+		// 	cout << itr->first << ": ";
+		// 	for (auto i = 0; i < itr->second.size(); i++){
+		// 		cout << itr->second[i] << ", ";
+		// 	}
+		// 	cout << endl;
+		// }
+		// cout << "-----------" << endl;
+
+		auto components = getComponents(conflictGraph);
+		printComponents(components);
+		// int numComponents = getNumComponents(conflictGraph);
+		// cout << numComponents << endl;
 		curr->clear();
 	}  // end of while loop
 

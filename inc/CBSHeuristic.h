@@ -57,6 +57,7 @@ public:
 	void computeQuickHeuristics(CBSNode& curr) const; // this function is called when generating a CT node
 	void copyConflictGraph(CBSNode& child, const CBSNode& parent) const;
 	void clear() { lookupTable.clear(); }
+	static bool SyncMDDs(const MDD &mdd1, const MDD& mdd2); 	// Match and prune MDD according to another MDD.
 
 private:
 	int screen = 0;
@@ -82,7 +83,6 @@ private:
 
 	bool dependent(int a1, int a2, CBSNode& node); // return true if the two agents are dependent
 	int solve2Agents(int a1, int a2, const CBSNode& node, bool cardinal);
-	static bool SyncMDDs(const MDD &mdd1, const MDD& mdd2); 	// Match and prune MDD according to another MDD.
 
 	int minimumVertexCover(const vector<int>& CG);
 	int minimumVertexCover(const vector<int>& CG, int old_mvc, int cols, int num_of_edges);
