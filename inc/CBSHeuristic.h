@@ -58,7 +58,9 @@ public:
 	void copyConflictGraph(CBSNode& child, const CBSNode& parent) const;
 	void clear() { lookupTable.clear(); }
 	static bool SyncMDDs(const MDD &mdd1, const MDD& mdd2); 	// Match and prune MDD according to another MDD.
-
+	double quantifyDependence(int a1, int a2, CBSNode& Node);
+	double SyncMDDsOverlap(const MDD &mdd1, const MDD& mdd2);
+	bool dependent(int a1, int a2, CBSNode& Node);
 private:
 	int screen = 0;
 	int num_of_agents;
@@ -81,7 +83,7 @@ private:
 	bool buildDependenceGraph(CBSNode& node, vector<int>& CG, int& num_of_CGedges);
 	bool buildWeightedDependencyGraph(CBSNode& curr, vector<int>& CG);
 
-	bool dependent(int a1, int a2, CBSNode& node); // return true if the two agents are dependent
+	// bool dependent(int a1, int a2, CBSNode& node); // return true if the two agents are dependent
 	int solve2Agents(int a1, int a2, const CBSNode& node, bool cardinal);
 
 	int minimumVertexCover(const vector<int>& CG);

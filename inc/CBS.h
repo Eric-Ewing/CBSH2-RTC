@@ -75,6 +75,7 @@ public:
     void savePaths(const string &fileName) const; // write the paths to a file
 
 	void clear(); // used for rapid random  restart
+    bool combineSubInstances(CBS instance2);
 
 private:
 	bool target_reasoning; // using target reasoning
@@ -148,7 +149,8 @@ private:
 	void printResults() const;
 	static void printConflicts(const CBSNode &curr);
 
-	bool validateSolution() const;
-	inline int getAgentLocation(int agent_id, size_t timestep) const;
+
+    bool validateSolution() const;
+    inline int getAgentLocation(int agent_id, size_t timestep) const;
 	inline void pushNode(CBSNode* node);
 };

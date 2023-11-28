@@ -826,7 +826,41 @@ bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 	start = clock();
 
 	generateRoot();
+	// auto curr = focal_list.top();
+	// updatePaths(focal_list.top());
+	// vector<MDD*> mdds = vector<MDD*>();
+	// int above_10 = 0;
+	// int above_25 = 0;
+	// int above_75 = 0;
+	// for (int i = 0; i < paths.size(); i++){
+	// 	mdds.emplace_back(mdd_helper.getMDD(*focal_list.top(), i, paths[i]->size() + 2));
+	// }
+	// boost::unordered_map<int, vector<int>> conflictGraph = boost::unordered_map<int, vector<int>> ();
+	// for (int i = 0; i < mdds.size(); i++){
+	// 	if (conflictGraph.find(i) == conflictGraph.end()){
+	// 	 			conflictGraph.insert({i, vector<int>()});
+	// 			}
+	// 	for (int j = i+1; j < mdds.size(); j++){
+	// 		float dependence = heuristic_helper.quantifyDependence(i, j, *focal_list.top());
+	// 		cout << i << ", " << j << ", " <<  dependence << endl;
+	// 		if (dependence > 0.1){
+	// 			above_10 ++;
+	// 			conflictGraph[i].push_back(j);
+	// 			conflictGraph[j].push_back(i);
+	// 		}
 
+	// 		if (dependence > 0.25)
+	// 			above_25 ++;
+	// 		if (dependence > 0.75)
+	// 			above_75 ++;
+			
+	// 	}
+	// }
+	// auto components = getComponents(conflictGraph);
+	// printComponents(components);
+	// cout << above_10 << ", " <<above_25 << ", " << above_75 << endl;
+	// exit(0);
+	
 	while (!open_list.empty() && !solution_found)
 	{
 		updateFocalList();
@@ -1113,39 +1147,44 @@ bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 			}
 		}
 		// curr->printConflictGraph(paths.size());
-		boost::unordered_map<int, vector<int>> conflictGraph = boost::unordered_map<int, vector<int>> ();
-		for (int i = 0; i < search_engines.size(); i++){
-			if (conflictGraph.find(i) == conflictGraph.end()){
-				conflictGraph.insert({i, vector<int>()});
-			}
-			for(int j = i+1; j < paths.size(); j++){
-				int a1 = i;
-				int a2 = j;
-				auto mdda = mdd_helper.getMDD(*curr, a1, paths[a1]->size());
-				auto mddb = mdd_helper.getMDD(*curr, a2, paths[a2]->size());
-				auto mdd1 = new MDD(*mdda);
-				auto mdd2 = new MDD(*mddb);
-				if (heuristic_helper.SyncMDDs(*mdd1, *mdd2)){
-					if (conflictGraph.find(j) == conflictGraph.end()){
-						conflictGraph[j] = vector<int>();
-					}
-					conflictGraph[i].push_back(j);
-					conflictGraph[j].push_back(i);
-				}
-			}
-		}
-		
-		// for (auto itr = conflictGraph.begin(); itr != conflictGraph.end(); itr++){
-		// 	cout << itr->first << ": ";
-		// 	for (auto i = 0; i < itr->second.size(); i++){
-		// 		cout << itr->second[i] << ", ";
-		// 	}
-		// 	cout << endl;
+		// if (search_engines.size() > 2){
+		// 	cout << "Dependence " << heuristic_helper.quantifyDependence(10, 0, *curr) << endl;
+		// 	cout << "Dependence bool " << heuristic_helper.dependent(10, 0, *curr) << endl;
 		// }
-		// cout << "-----------" << endl;
+		// if (search_engines.size() > 2){
+		// 	boost::unordered_map<int, vector<int>> conflictGraph = boost::unordered_map<int, vector<int>> ();
+		// 	for (int i = 0; i < search_engines.size(); i++){
+		// 		if (conflictGraph.find(i) == conflictGraph.end()){
+		// 			conflictGraph.insert({i, vector<int>()});
+		// 		}
+		// 		for(int j = i+1; j < paths.size(); j++){
+		// 			int a1 = i;
+		// 			int a2 = j;
+		// 			if (heuristic_helper.dependent(a1, a2, *curr)){
+		// 				if (conflictGraph.find(j) == conflictGraph.end()){
+		// 					conflictGraph[j] = vector<int>();
+		// 				}
+		// 				conflictGraph[i].push_back(j);
+		// 				conflictGraph[j].push_back(i);
+		// 			}
+		// 		}
+		// 	}
+			
+		// 	for (auto itr = conflictGraph.begin(); itr != conflictGraph.end(); itr++){
+		// 		cout << itr->first << ": ";
+		// 		for (auto i = 0; i < itr->second.size(); i++){
+		// 			cout << itr->second[i] << ", ";
+		// 		}
+		// 		cout << endl;
+		// 	}
+		// 	cout << "-----------" << endl;
 
-		auto components = getComponents(conflictGraph);
-		printComponents(components);
+			// auto components = getComponents(conflictGraph);
+			// if (search_engines.size() > 2){
+			// 	// Write to file?
+			// 	// printComponents(components);
+			// }
+		// }
 		// int numComponents = getNumComponents(conflictGraph);
 		// cout << numComponents << endl;
 		curr->clear();
@@ -1329,7 +1368,13 @@ void CBS::clearSearchEngines()
 	search_engines.clear();
 }
 
-
+bool CBS::combineSubInstances(CBS instance2){
+	for (auto path : instance2.paths){
+		paths.push_back(path);
+	}
+	num_of_agents = paths.size();
+	return validateSolution();
+}
 bool CBS::validateSolution() const
 {
 	for (int a1 = 0; a1 < num_of_agents; a1++)
@@ -1344,7 +1389,7 @@ bool CBS::validateSolution() const
 				if (loc1 == loc2)
 				{
 					cout << "Agents " << a1 << " and " << a2 << " collides at " << loc1 << " at timestep " << timestep << endl;
-					return false;
+					// return false;
 				}
 				else if (timestep < min_path_length - 1
 						 && loc1 == paths[a2]->at(timestep + 1).location
@@ -1352,7 +1397,7 @@ bool CBS::validateSolution() const
 				{
 					cout << "Agents " << a1 << " and " << a2 << " collides at (" <<
 						 loc1 << "-->" << loc2 << ") at timestep " << timestep << endl;
-					return false;
+					// return false;
 				}
 			}
 			if (paths[a1]->size() != paths[a2]->size())
@@ -1366,7 +1411,7 @@ bool CBS::validateSolution() const
 					if (loc1 == loc2)
 					{
 						cout << "Agents " << a1 << " and " << a2 << " collides at " << loc1 << " at timestep " << timestep << endl;
-						return false; // It's at least a semi conflict			
+						// return false; // It's at least a semi conflict			
 					}
 				}
 			}

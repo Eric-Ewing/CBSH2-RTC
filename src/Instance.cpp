@@ -44,6 +44,20 @@ Instance::Instance(const string& map_fname, const string& agent_fname,
 
 }
 
+Instance Instance::subInstance(vector<int> agents){
+	// num_of_agents = agents.size();
+	vector<int> new_start_locations = vector<int>();
+	vector<int> new_goal_locations = vector<int>();
+	for (int agent : agents){
+		new_start_locations.push_back(start_locations[agent]);
+		new_goal_locations.push_back(goal_locations[agent]);
+	}
+	Instance new_instance = Instance(map_fname, agent_fname, num_of_agents, agent_indices, num_of_rows, num_of_cols, 0, 0);
+	new_instance.start_locations = new_start_locations;
+	new_instance.goal_locations = new_goal_locations;
+	new_instance.num_of_agents = agents.size();
+	return new_instance;
+}
 
 int Instance::randomWalk(int curr, int steps) const
 {

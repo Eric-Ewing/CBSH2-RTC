@@ -17,7 +17,7 @@ public:
 		int num_of_rows = 0, int num_of_cols = 0, int num_of_obstacles = 0, int warehouse_width = 0);
 
 	void printAgents() const;
-
+	Instance subInstance(vector<int> agents);
 
 	inline bool isObstacle(int loc) const { return my_map[loc]; }
 	inline bool validMove(int curr, int next) const

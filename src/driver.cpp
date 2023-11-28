@@ -125,15 +125,24 @@ int main(int argc, char** argv)
 		vm["agentNum"].as<int>(), vm["agentIdx"].as<string>(),
 		vm["rows"].as<int>(), vm["cols"].as<int>(), vm["obs"].as<int>(), vm["warehouseWidth"].as<int>());
 
+	vector<int> sub_agents = {0, 1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 16, 17, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 78};
+	vector<int> other_agents = vector<int>();
+	for (int i = 0; i < vm["agentNum"].as<int>(); i++){
+		if (find(sub_agents.begin(), sub_agents.end(), i) == sub_agents.end()){
+			other_agents.push_back(i);
+		}
+	}
+	Instance sub_instance = instance.subInstance(sub_agents);
+	Instance remaining = instance.subInstance(other_agents);
+
 	srand(vm["seed"].as<int>());
 
 	int runs = vm["restart"].as<int>();
 
-
 	//////////////////////////////////////////////////////////////////////
 	/// initialize the solver
     //////////////////////////////////////////////////////////////////////
-	CBS cbs(instance, vm["sipp"].as<bool>(), vm["screen"].as<int>());
+	CBS cbs(sub_instance, vm["sipp"].as<bool>(), vm["screen"].as<int>());
 	cbs.setPrioritizeConflicts(vm["prioritizingConflicts"].as<bool>());
 	cbs.setDisjointSplitting(vm["disjointSplitting"].as<bool>());
 	cbs.setBypass(vm["bypass"].as<bool>());
@@ -145,7 +154,17 @@ int main(int argc, char** argv)
 	cbs.setSavingStats(vm["stats"].as<bool>());
 	cbs.setNodeLimit(vm["nodeLimit"].as<int>());
 
-
+	CBS cbs2(remaining, vm["sipp"].as<bool>(), vm["screen"].as<int>());
+	cbs2.setPrioritizeConflicts(vm["prioritizingConflicts"].as<bool>());
+	cbs2.setDisjointSplitting(vm["disjointSplitting"].as<bool>());
+	cbs2.setBypass(vm["bypass"].as<bool>());
+	cbs2.setRectangleReasoning(r);
+	cbs2.setCorridorReasoning(c);
+	cbs2.setHeuristicType(h);
+	cbs2.setTargetReasoning(vm["targetReasoning"].as<bool>());
+	cbs2.setMutexReasoning(vm["mutexReasoning"].as<bool>());
+	cbs2.setSavingStats(vm["stats"].as<bool>());
+	cbs2.setNodeLimit(vm["nodeLimit"].as<int>());
 	//////////////////////////////////////////////////////////////////////
 	/// run
     //////////////////////////////////////////////////////////////////////
@@ -155,14 +174,18 @@ int main(int argc, char** argv)
 	{
 		cbs.clear();
 		cbs.solve(vm["cutoffTime"].as<double>(), min_f_val);
-		runtime += cbs.runtime;
+		cbs2.clear();
+		cbs2.solve(vm["cutoffTime"].as<double>(), min_f_val);
+		runtime += cbs.runtime + cbs2.runtime;
 		if (cbs.solution_found)
 			break;
-		min_f_val = (int) cbs.min_f_val;
+		min_f_val = (int) cbs.min_f_val + cbs2.min_f_val;
 		cbs.randomRoot = true;
 	}
 	cbs.runtime = runtime;
 
+	bool valid = cbs2.combineSubInstances(cbs);
+	cout << "VALID???? " << valid<< endl;
     //////////////////////////////////////////////////////////////////////
     /// write results to files
     //////////////////////////////////////////////////////////////////////
