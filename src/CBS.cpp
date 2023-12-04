@@ -640,7 +640,7 @@ void CBS::saveStats(const string &fileName, const string &instanceName) const
 		stats << get<0>(ins) << "," << get<1>(ins) << "," << get<2>(ins)->time_generated << "," << get<3>(ins) << "," << get<4>(ins) << endl;
 	}
 	stats.close();
-	cout << "Write " << heuristic_helper.sub_instances.size() << " samples to files" << endl;
+	//cout << "Write " << heuristic_helper.sub_instances.size() << " samples to files" << endl;
 }
 
 
@@ -740,6 +740,9 @@ string CBS::getSolverName() const
 	if (bypass)
 		name += "+BP";
 	name += " with " + search_engines[0]->getName();
+	if (decomp == true){
+		name += "and Decomp";
+	}
 	return name;
 }
 
@@ -809,6 +812,93 @@ void printComponents(vector<vector<int>> comps){
 		cout << endl;
 	}
 }
+vector<vector<double>> CBS::getDependencies(){
+	generateRoot();
+	auto curr = focal_list.top();
+	updatePaths(focal_list.top());
+	vector<MDD*> mdds = vector<MDD*>();
+	vector<vector<double>> dependencies;
+	dependencies.resize(mdds.size());
+	mdd_helper.init(num_of_agents);
+	for (int i = 0; i < paths.size(); i++){
+		mdds.emplace_back(mdd_helper.getMDD(*focal_list.top(), i, paths[i]->size() + 2));
+	}
+	
+	for (int i = 0; i < mdds.size(); i++){
+		dependencies.emplace_back(vector<double>());
+		dependencies[i].resize(mdds.size());
+		// dependencies[i] = vector<double>(mdds.size());
+		for (int j = i+1; j < mdds.size(); j++){
+			double dependence = heuristic_helper.quantifyDependence(i, j, *focal_list.top());
+			dependencies[i][j] = dependence;
+		}
+	}
+	return  dependencies;
+
+}
+
+vector<vector<int>> CBS::getComponents(vector<vector<double>> dependencies, double threshold){
+	unordered_map<int, unordered_set<int>*> setMembership = unordered_map<int, unordered_set<int>*>();
+	for(int i = 0; i < dependencies.size(); i++){
+		for (int j = i+1; j < dependencies[i].size(); j++){
+		int a1 = i;
+		int a2 = j;
+		if (dependencies[i][j] > threshold){
+			if (setMembership.find(a1) == setMembership.end() && setMembership.find(a2) == setMembership.end()){
+				// If neither agent exists, make new singleton components for each
+				unordered_set<int>* component = new unordered_set<int>();
+				component->insert(a1);
+				component->insert(a2);
+				setMembership.insert(pair<int, unordered_set<int>*>(a1, component));
+				setMembership.insert(pair<int, unordered_set<int>*>(a2, component));
+			}
+			else if(setMembership.find(a1) == setMembership.end()){
+				// if one exists, but not the other, add to existing set
+				unordered_set<int>* component = setMembership[a2];
+				component->insert(a1);
+				setMembership.insert(pair<int, unordered_set<int>*>(a1, component));
+			}
+			else if(setMembership.find(a2) == setMembership.end()){
+				unordered_set<int>* component = setMembership[a1];
+				component->insert(a2);
+				setMembership[a2] = setMembership[a1];
+			}
+			else{
+				// Merge two components
+				unordered_set<int>* component1 = setMembership.find(a1)->second;
+				unordered_set<int>* component2 = setMembership.find(a2)->second;
+				if (component1 != component2){
+					for (int agent: *component1){
+						component2->insert(agent);
+						setMembership[agent] = component2;
+						// component1->erase(agent);
+					}
+				}
+			}
+		}
+	}}
+	//Gather back independent components
+	vector<vector<int>> components;
+	unordered_map<int, bool> alreadyCounted;
+	for (auto kv : setMembership){
+		int agent = kv.first;
+		unordered_set<int>* component = kv.second;
+		vector<int> componentAgents;
+		if (!component->empty()){
+			for (auto itr = component->begin(); itr != component->end(); itr++){
+				if (alreadyCounted.find(*itr) == alreadyCounted.end()){
+					componentAgents.emplace_back(*itr);
+					alreadyCounted[*itr] = true;
+				}
+			}
+		}
+		sort(componentAgents.begin(), componentAgents.end());
+		if(componentAgents.size() > 0){
+			components.emplace_back(componentAgents);
+		}
+	}
+	return components;
+}
 
 bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 {
@@ -826,40 +916,8 @@ bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 	start = clock();
 
 	generateRoot();
-	// auto curr = focal_list.top();
-	// updatePaths(focal_list.top());
-	// vector<MDD*> mdds = vector<MDD*>();
-	// int above_10 = 0;
-	// int above_25 = 0;
-	// int above_75 = 0;
-	// for (int i = 0; i < paths.size(); i++){
-	// 	mdds.emplace_back(mdd_helper.getMDD(*focal_list.top(), i, paths[i]->size() + 2));
-	// }
-	// boost::unordered_map<int, vector<int>> conflictGraph = boost::unordered_map<int, vector<int>> ();
-	// for (int i = 0; i < mdds.size(); i++){
-	// 	if (conflictGraph.find(i) == conflictGraph.end()){
-	// 	 			conflictGraph.insert({i, vector<int>()});
-	// 			}
-	// 	for (int j = i+1; j < mdds.size(); j++){
-	// 		float dependence = heuristic_helper.quantifyDependence(i, j, *focal_list.top());
-	// 		cout << i << ", " << j << ", " <<  dependence << endl;
-	// 		if (dependence > 0.1){
-	// 			above_10 ++;
-	// 			conflictGraph[i].push_back(j);
-	// 			conflictGraph[j].push_back(i);
-	// 		}
-
-	// 		if (dependence > 0.25)
-	// 			above_25 ++;
-	// 		if (dependence > 0.75)
-	// 			above_75 ++;
-			
-	// 	}
-	// }
-	// auto components = getComponents(conflictGraph);
-	// printComponents(components);
-	// cout << above_10 << ", " <<above_25 << ", " << above_75 << endl;
-	// exit(0);
+	// printPaths();
+	
 	
 	while (!open_list.empty() && !solution_found)
 	{
@@ -1058,6 +1116,7 @@ bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 				if (!solved[i])
 				{
 					delete child[i];
+					child[i] = NULL;
 					continue;
 				}
 				if (child[i]->g_val + child[i]->h_val == min_f_val && curr->unknownConf.size() + curr->conflicts.size() == 0) //no conflicts
@@ -1191,8 +1250,9 @@ bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 	}  // end of while loop
 
 
-	runtime = (double) (clock() - start) / CLOCKS_PER_SEC;
-	if (solution_found && !validateSolution())
+	runtime = (double) (clock() - start) / CLOCKS_PER_SEC + initialRuntime;
+	// if (solution_found && !validateSolution())
+	if (!validateSolution())
 	{
 		cout << "Solution invalid!!!" << endl;
 		printPaths();
@@ -1258,7 +1318,8 @@ CBS::CBS(const Instance& instance, bool sipp, int screen) :
 
 bool CBS::generateRoot()
 {
-	dummy_start = new CBSNode();
+	if (dummy_start == NULL)
+		dummy_start = new CBSNode();
 	dummy_start->g_val = 0;
 	paths.resize(num_of_agents, nullptr);
 
@@ -1314,6 +1375,11 @@ bool CBS::generateRoot()
 	// generate dummy start and update data structures		
 	dummy_start->h_val = 0;
 	dummy_start->depth = 0;
+	if (!open_list.empty()){
+		open_list.pop();
+		focal_list.pop();
+		allNodes_table.pop_back();
+	}
 	dummy_start->open_handle = open_list.push(dummy_start);
 	dummy_start->focal_handle = focal_list.push(dummy_start);
 
@@ -1338,8 +1404,10 @@ inline void CBS::releaseNodes()
 {
 	open_list.clear();
 	focal_list.clear();
-	for (auto node : allNodes_table)
+	for (auto node : allNodes_table){
 		delete node;
+		node = NULL;
+	}
 	allNodes_table.clear();
 }
 
@@ -1357,8 +1425,8 @@ inline void CBS::releaseNodes()
 
 CBS::~CBS()
 {
-	releaseNodes();
-	mdd_helper.clear();
+	// // releaseNodes();
+	// mdd_helper.clear();
 }
 
 void CBS::clearSearchEngines()
@@ -1379,6 +1447,10 @@ bool CBS::validateSolution() const
 {
 	for (int a1 = 0; a1 < num_of_agents; a1++)
 	{
+		if (paths[a1]->at(0).location != search_engines[a1]->start_location || paths[a1]->at(paths[a1]->size() - 1).location != search_engines[a1]->goal_location){
+			cout << "Wrong start or goal location!" << endl;
+			return false;
+		}
 		for (int a2 = a1 + 1; a2 < num_of_agents; a2++)
 		{
 			size_t min_path_length = paths[a1]->size() < paths[a2]->size() ? paths[a1]->size() : paths[a2]->size();
@@ -1389,7 +1461,7 @@ bool CBS::validateSolution() const
 				if (loc1 == loc2)
 				{
 					cout << "Agents " << a1 << " and " << a2 << " collides at " << loc1 << " at timestep " << timestep << endl;
-					// return false;
+					return false;
 				}
 				else if (timestep < min_path_length - 1
 						 && loc1 == paths[a2]->at(timestep + 1).location
@@ -1397,7 +1469,7 @@ bool CBS::validateSolution() const
 				{
 					cout << "Agents " << a1 << " and " << a2 << " collides at (" <<
 						 loc1 << "-->" << loc2 << ") at timestep " << timestep << endl;
-					// return false;
+					return false;
 				}
 			}
 			if (paths[a1]->size() != paths[a2]->size())
@@ -1411,7 +1483,7 @@ bool CBS::validateSolution() const
 					if (loc1 == loc2)
 					{
 						cout << "Agents " << a1 << " and " << a2 << " collides at " << loc1 << " at timestep " << timestep << endl;
-						// return false; // It's at least a semi conflict			
+						return false; // It's at least a semi conflict			
 					}
 				}
 			}
@@ -1424,6 +1496,70 @@ inline int CBS::getAgentLocation(int agent_id, size_t timestep) const
 {
 	size_t t = max(min(timestep, paths[agent_id]->size() - 1), (size_t) 0);
 	return paths[agent_id]->at(t).location;
+}
+
+void CBS::fromSubinstance(CBS subinstance, vector<int> sub_instance_agents){
+	int j = 0;
+	if (dummy_start != nullptr){
+		dummy_start->clear();
+		delete dummy_start;
+		dummy_start = NULL;
+	}
+	dummy_start = new CBSNode();
+	dummy_start->g_val = 0;
+	//TODO: Make sure paths found initially is empty, if not, change stuff rather than emplace...
+	if (paths_found_initially.empty()){
+		for (int i = 0; i < num_of_agents; i++){
+			// asumes agents are given in numerical order
+			if (j < sub_instance_agents.size() && i == sub_instance_agents[j]){
+				paths_found_initially.emplace_back(*subinstance.paths[j]);
+				initial_constraints[i] = subinstance.initial_constraints[j];
+				j++;
+			}
+			else{
+				paths_found_initially.emplace_back(search_engines[i]->findPath(*dummy_start, initial_constraints[i], paths, i, 0));
+			}
+			dummy_start->makespan = max(dummy_start->makespan, (paths_found_initially[i]).size() - 1);
+			dummy_start->g_val += (int) paths_found_initially[i].size() - 1;
+		}
+	}
+
+	else{
+		for (int i = 0; i < num_of_agents; i++){
+			// asumes agents are given in numerical order
+			if (j < sub_instance_agents.size() && i == sub_instance_agents[j]){
+				assert(paths_found_initially[i].front().location == (subinstance.paths[j])->front().location);
+				paths_found_initially[i] = *(subinstance.paths[j]);
+				initial_constraints[i] = subinstance.initial_constraints[j];
+				j++;
+			}
+			// else{
+			// 	paths_found_initially[i] = search_engines[i]->findPath(*dummy_start, initial_constraints[i], paths, i, 0);
+			// }
+			dummy_start->makespan = max(dummy_start->makespan, (paths_found_initially[i]).size() - 1);
+			dummy_start->g_val += (int) paths_found_initially[i].size() - 1;
+		}
+	}
+	min_f_val += subinstance.min_f_val;
+	runtime_generate_child += subinstance.runtime_generate_child; // runtimr of generating child nodes
+	runtime_build_CT += subinstance.runtime_build_CT; // runtimr of building constraint table
+	runtime_build_CAT += subinstance.runtime_build_CAT; // runtime of building conflict avoidance table
+	runtime_path_finding += subinstance.runtime_path_finding; // runtime of finding paths for single agents
+	runtime_detect_conflicts += subinstance.runtime_detect_conflicts;
+	runtime_preprocessing += subinstance.runtime_preprocessing; // runtime of building heuristic table for the low level
+
+	num_corridor_conflicts += subinstance.num_corridor_conflicts;
+	num_rectangle_conflicts += subinstance.num_rectangle_conflicts;
+	num_target_conflicts += subinstance.num_target_conflicts;
+	num_mutex_conflicts += subinstance.num_mutex_conflicts;
+	num_standard_conflicts += subinstance.num_standard_conflicts;
+
+	num_adopt_bypass += subinstance.num_adopt_bypass; // number of times when adopting bypasses
+
+	num_HL_expanded += subinstance.num_HL_expanded;
+	num_HL_generated += subinstance.num_HL_generated;
+	num_LL_expanded += subinstance.num_LL_expanded;
+	num_LL_generated += subinstance.num_LL_generated;
 }
 
 

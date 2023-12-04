@@ -43,7 +43,7 @@ public:
 
 	void init()
 	{
-		if (type == heuristics_type::DG || type == heuristics_type::WDG)
+		if (type == heuristics_type::DG || type == heuristics_type::WDG || type == heuristics_type::CG)
 		{
 			lookupTable.resize(num_of_agents);
 			for (int i = 0; i < num_of_agents; i++)

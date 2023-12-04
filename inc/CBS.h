@@ -37,13 +37,13 @@ public:
 	CBSNode* dummy_start = nullptr;
 	CBSNode* goal_node = nullptr;
 
-
+	double initialRuntime = 0;
 
 	bool solution_found = false;
 	int solution_cost = -2;
-	double min_f_val;
+	double min_f_val = 0;
 	double focal_list_threshold;
-
+	bool decomp = false;
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// set params
 	void setHeuristicType(heuristics_type h) {heuristic_helper.type = h; }
@@ -76,9 +76,14 @@ public:
 
 	void clear(); // used for rapid random  restart
     bool combineSubInstances(CBS instance2);
+    void fromSubinstance(CBS subinstance, vector<int> sub_instance_agents);
+
+	vector<vector<double>> getDependencies();
+
+    vector<vector<int>> getComponents(vector<vector<double>> dependencies, double threshold);
 
 private:
-	bool target_reasoning; // using target reasoning
+    bool target_reasoning; // using target reasoning
 	bool disjoint_splitting; // disjoint splitting
 	bool mutex_reasoning; // using mutex reasoning
 	bool bypass; // using Bypass1
@@ -149,8 +154,7 @@ private:
 	void printResults() const;
 	static void printConflicts(const CBSNode &curr);
 
-
     bool validateSolution() const;
     inline int getAgentLocation(int agent_id, size_t timestep) const;
-	inline void pushNode(CBSNode* node);
+    inline void pushNode(CBSNode* node);
 };

@@ -10,7 +10,48 @@
 #include <boost/program_options.hpp>
 #include <boost/tokenizer.hpp>
 #include "CBS.h"
+#include <fstream>
+#include <boost/filesystem.hpp>
 
+using std::ifstream;
+
+void saveComponentsFile(vector<vector<int>> components, string filename){
+	if (boost::filesystem::exists(filename)){
+		return;
+	}
+	else{
+		ofstream f(filename.c_str());
+		for (auto component : components){
+			for (int agent : component){
+				f << agent << ", ";
+			}
+			f << endl;
+		}
+	}
+}
+
+vector<vector<int>> loadComponentsFile(const string &filename) {
+    vector<vector<int>> components;
+    ifstream f(filename.c_str());
+
+    if (!f) {
+        cerr << "Error opening file for reading: " << filename << endl;
+        exit(1); // Return an empty vector in case of an error
+    }
+
+    int agent;
+    while (f >> agent) {
+        char comma;
+        vector<int> component;
+
+        do {
+            component.push_back(agent);
+        } while (f >> comma >> agent && comma == ',');
+        components.push_back(component);
+    }
+
+    return components;
+}
 
 /* Main function */
 int main(int argc, char** argv)
@@ -51,6 +92,8 @@ int main(int argc, char** argv)
 		("targetReasoning", po::value<bool>()->default_value(true), "Using target reasoning")
 		("restart", po::value<int>()->default_value(1), "number of restart times (at least 1)")
 		("sipp", po::value<bool>()->default_value(false), "using sipp as the single agent solver")
+		("decompose", po::value<bool>()->default_value(false), "perform instance decomposition")
+		("threshold", po::value<double>()->default_value(0), "Threshold for dependency")
 		;
 
 	po::variables_map vm;
@@ -121,84 +164,145 @@ int main(int argc, char** argv)
 	///////////////////////////////////////////////////////////////////////////
 	/// load the instance
     //////////////////////////////////////////////////////////////////////
-	Instance instance(vm["map"].as<string>(), vm["agents"].as<string>(),
+	Instance originalInstance(vm["map"].as<string>(), vm["agents"].as<string>(),
 		vm["agentNum"].as<int>(), vm["agentIdx"].as<string>(),
 		vm["rows"].as<int>(), vm["cols"].as<int>(), vm["obs"].as<int>(), vm["warehouseWidth"].as<int>());
-
-	vector<int> sub_agents = {0, 1, 2, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 16, 17, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 78};
-	vector<int> other_agents = vector<int>();
-	for (int i = 0; i < vm["agentNum"].as<int>(); i++){
-		if (find(sub_agents.begin(), sub_agents.end(), i) == sub_agents.end()){
-			other_agents.push_back(i);
-		}
-	}
-	Instance sub_instance = instance.subInstance(sub_agents);
-	Instance remaining = instance.subInstance(other_agents);
 
 	srand(vm["seed"].as<int>());
 
 	int runs = vm["restart"].as<int>();
 
-	//////////////////////////////////////////////////////////////////////
-	/// initialize the solver
-    //////////////////////////////////////////////////////////////////////
-	CBS cbs(sub_instance, vm["sipp"].as<bool>(), vm["screen"].as<int>());
-	cbs.setPrioritizeConflicts(vm["prioritizingConflicts"].as<bool>());
-	cbs.setDisjointSplitting(vm["disjointSplitting"].as<bool>());
-	cbs.setBypass(vm["bypass"].as<bool>());
-	cbs.setRectangleReasoning(r);
-	cbs.setCorridorReasoning(c);
-	cbs.setHeuristicType(h);
-	cbs.setTargetReasoning(vm["targetReasoning"].as<bool>());
-	cbs.setMutexReasoning(vm["mutexReasoning"].as<bool>());
-	cbs.setSavingStats(vm["stats"].as<bool>());
-	cbs.setNodeLimit(vm["nodeLimit"].as<int>());
+	if (vm["decompose"].as<bool>()){
+		//////////////////////////////////////////////////////////////////////
+		/// initialize the solver
+		//////////////////////////////////////////////////////////////////////
 
-	CBS cbs2(remaining, vm["sipp"].as<bool>(), vm["screen"].as<int>());
-	cbs2.setPrioritizeConflicts(vm["prioritizingConflicts"].as<bool>());
-	cbs2.setDisjointSplitting(vm["disjointSplitting"].as<bool>());
-	cbs2.setBypass(vm["bypass"].as<bool>());
-	cbs2.setRectangleReasoning(r);
-	cbs2.setCorridorReasoning(c);
-	cbs2.setHeuristicType(h);
-	cbs2.setTargetReasoning(vm["targetReasoning"].as<bool>());
-	cbs2.setMutexReasoning(vm["mutexReasoning"].as<bool>());
-	cbs2.setSavingStats(vm["stats"].as<bool>());
-	cbs2.setNodeLimit(vm["nodeLimit"].as<int>());
-	//////////////////////////////////////////////////////////////////////
-	/// run
-    //////////////////////////////////////////////////////////////////////
-	double runtime = 0;
-	int min_f_val = 0;
-	for (int i = 0; i < runs; i++)
-	{
-		cbs.clear();
-		cbs.solve(vm["cutoffTime"].as<double>(), min_f_val);
-		cbs2.clear();
-		cbs2.solve(vm["cutoffTime"].as<double>(), min_f_val);
-		runtime += cbs.runtime + cbs2.runtime;
-		if (cbs.solution_found)
-			break;
-		min_f_val = (int) cbs.min_f_val + cbs2.min_f_val;
-		cbs.randomRoot = true;
+		CBS cbs(originalInstance, vm["sipp"].as<bool>(), vm["screen"].as<int>());
+		// CBS cbs(instance, vm["sipp"].as<bool>(), vm["screen"].as<int>());
+		cbs.setPrioritizeConflicts(vm["prioritizingConflicts"].as<bool>());
+		cbs.setDisjointSplitting(vm["disjointSplitting"].as<bool>());
+		cbs.setBypass(vm["bypass"].as<bool>());
+		cbs.setRectangleReasoning(r);
+		cbs.setCorridorReasoning(c);
+		cbs.setHeuristicType(h);
+		cbs.setTargetReasoning(vm["targetReasoning"].as<bool>());
+		cbs.setMutexReasoning(vm["mutexReasoning"].as<bool>());
+		cbs.setSavingStats(vm["stats"].as<bool>());
+		cbs.setNodeLimit(vm["nodeLimit"].as<int>());
+		
+		double dependencyThreshold = vm["threshold"].as<double>();
+		
+		string cacheComponentsFile = "components/" + vm["agents"].as<string>() + std::to_string(vm["agentNum"].as<int>())+std::to_string(vm["threshold"].as<double>())+ ".components";
+		ifstream f(cacheComponentsFile.c_str());
+		vector<vector<int>> componentsOfAgents;
+		if (boost::filesystem::exists(cacheComponentsFile)){
+			componentsOfAgents = loadComponentsFile(cacheComponentsFile);
+		}
+		else{
+			vector<vector<double>> dependencies = cbs.getDependencies();
+			componentsOfAgents = cbs.getComponents(dependencies, dependencyThreshold);
+			saveComponentsFile(componentsOfAgents, cacheComponentsFile);
+		}
+
+		int min_f_value = 0;
+		vector<CBS> solvers = vector<CBS>();
+
+		for (vector<int> component : componentsOfAgents){
+			Instance sub_instance = originalInstance.subInstance(component);
+
+			CBS cbsSubinstance = CBS(sub_instance, vm["sipp"].as<bool>(), vm["screen"].as<int>());
+			// cbsSubinstance cbs(instance, vm["sipp"].as<bool>(), vm["screen"].as<int>());
+			cbsSubinstance.setPrioritizeConflicts(vm["prioritizingConflicts"].as<bool>());
+			cbsSubinstance.setDisjointSplitting(vm["disjointSplitting"].as<bool>());
+			cbsSubinstance.setBypass(vm["bypass"].as<bool>());
+			cbsSubinstance.setRectangleReasoning(r);
+			cbsSubinstance.setCorridorReasoning(c);
+			cbsSubinstance.setHeuristicType(h);
+			cbsSubinstance.setTargetReasoning(vm["targetReasoning"].as<bool>());
+			cbsSubinstance.setMutexReasoning(vm["mutexReasoning"].as<bool>());
+			cbsSubinstance.setSavingStats(vm["stats"].as<bool>());
+			cbsSubinstance.setNodeLimit(vm["nodeLimit"].as<int>());
+
+			cbsSubinstance.solve(vm["cutoffTime"].as<double>(), 0); // solve
+
+			min_f_value += cbsSubinstance.min_f_val; //update min f value
+			solvers.emplace_back(cbsSubinstance); // update all solvers
+
+			cbs.initialRuntime += cbsSubinstance.runtime; // update runtime
+			cbs.fromSubinstance(cbsSubinstance, component); // add solved paths of sub-instances
+		}
+		cbs.decomp = true;
+		//////////////////////////////////////////////////////////////////////
+		/// run
+		//////////////////////////////////////////////////////////////////////
+		double runtime = 0;
+		cbs.solve(vm["cutoffTime"].as<double>(), min_f_value);
+		
+
+		// bool valid = cbs2.combineSubInstances(cbs);
+		//////////////////////////////////////////////////////////////////////
+		/// write results to files
+		//////////////////////////////////////////////////////////////////////
+		if (vm.count("output"))
+			cbs.saveResults(vm["output"].as<string>(), vm["agents"].as<string>()+":"+ vm["agentIdx"].as<string>());
+		// cbs2.saveCT(vm["output"].as<string>() + ".tree"); // for debug
+		if (vm["stats"].as<bool>())
+		{
+			cbs.saveStats(vm["output"].as<string>(), vm["agents"].as<string>() + ":" + vm["agentIdx"].as<string>());
+		}
+		if (cbs.solution_found && vm.count("outputPaths"))
+			cbs.savePaths(vm["outputPaths"].as<string>());
+		cbs.clearSearchEngines();
+		return 0;
 	}
-	cbs.runtime = runtime;
+	else{
+		//////////////////////////////////////////////////////////////////////
+		/// initialize the solver
+		//////////////////////////////////////////////////////////////////////
+		CBS cbs(originalInstance, vm["sipp"].as<bool>(), vm["screen"].as<int>());
+		// CBS cbs(instance, vm["sipp"].as<bool>(), vm["screen"].as<int>());
+		cbs.setPrioritizeConflicts(vm["prioritizingConflicts"].as<bool>());
+		cbs.setDisjointSplitting(vm["disjointSplitting"].as<bool>());
+		cbs.setBypass(vm["bypass"].as<bool>());
+		cbs.setRectangleReasoning(r);
+		cbs.setCorridorReasoning(c);
+		cbs.setHeuristicType(h);
+		cbs.setTargetReasoning(vm["targetReasoning"].as<bool>());
+		cbs.setMutexReasoning(vm["mutexReasoning"].as<bool>());
+		cbs.setSavingStats(vm["stats"].as<bool>());
+		cbs.setNodeLimit(vm["nodeLimit"].as<int>());
 
-	bool valid = cbs2.combineSubInstances(cbs);
-	cout << "VALID???? " << valid<< endl;
-    //////////////////////////////////////////////////////////////////////
-    /// write results to files
-    //////////////////////////////////////////////////////////////////////
-	if (vm.count("output"))
-		cbs.saveResults(vm["output"].as<string>(), vm["agents"].as<string>()+":"+ vm["agentIdx"].as<string>());
-	// cbs.saveCT(vm["output"].as<string>() + ".tree"); // for debug
-	if (vm["stats"].as<bool>())
-	{
-		cbs.saveStats(vm["output"].as<string>(), vm["agents"].as<string>() + ":" + vm["agentIdx"].as<string>());
+		//////////////////////////////////////////////////////////////////////
+		/// run
+		//////////////////////////////////////////////////////////////////////
+		double runtime = 0;
+		int min_f_val = 0;
+		for (int i = 0; i < runs; i++)
+		{
+			cbs.clear();
+			cbs.solve(vm["cutoffTime"].as<double>(), min_f_val);
+			runtime += cbs.runtime;
+			if (cbs.solution_found)
+				break;
+			min_f_val = (int) cbs.min_f_val; 
+			cbs.randomRoot = true;
+		}
+		cbs.runtime = runtime;
+
+		// bool valid = cbs.combineSubInstances(cbs);
+		//////////////////////////////////////////////////////////////////////
+		/// write results to files
+		//////////////////////////////////////////////////////////////////////
+		if (vm.count("output"))
+			cbs.saveResults(vm["output"].as<string>(), vm["agents"].as<string>()+":"+ vm["agentIdx"].as<string>());
+		// cbs.saveCT(vm["output"].as<string>() + ".tree"); // for debug
+		if (vm["stats"].as<bool>())
+		{
+			cbs.saveStats(vm["output"].as<string>(), vm["agents"].as<string>() + ":" + vm["agentIdx"].as<string>());
+		}
+		if (cbs.solution_found && vm.count("outputPaths"))
+			cbs.savePaths(vm["outputPaths"].as<string>());
+		cbs.clearSearchEngines();
+		return 0;
 	}
-    if (cbs.solution_found && vm.count("outputPaths"))
-        cbs.savePaths(vm["outputPaths"].as<string>());
-	cbs.clearSearchEngines();
-	return 0;
-
 }

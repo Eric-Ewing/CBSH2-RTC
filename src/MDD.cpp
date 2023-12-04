@@ -481,16 +481,19 @@ SyncMDD::~SyncMDD()
 MDD* MDDTable::getMDD(CBSNode& node, int id, size_t mdd_levels)
 {
 	ConstraintsHasher c(id, &node);
+	if (lookupTable.size() > c.a){
 	auto got = lookupTable[c.a].find(c);
-	if (got != lookupTable[c.a].end())
+	if (got != lookupTable[c.a].end() && got->second->levels.size() == mdd_levels)
 	{
-		assert(got->second->levels.size() == mdd_levels);
+		// assert(got->second->levels.size() == mdd_levels);
 		return got->second;
+	}
 	}
 	releaseMDDMemory(id);
 
 	clock_t t = clock();
 	MDD* mdd = new MDD();
+	assert(id < initial_constraints.size());
 	ConstraintTable ct(initial_constraints[id]);
 	ct.build(node, id);
 	mdd->buildMDD(ct, mdd_levels, search_engines[id]);
@@ -547,14 +550,14 @@ void MDDTable::releaseMDDMemory(int id)
 
 void MDDTable::clear()
 {
-	for (auto& mdds : lookupTable)
-	{
-		for (auto mdd : mdds)
-		{
-			delete mdd.second;
-		}
-	}
-	lookupTable.clear();
+	// for (auto& mdds : lookupTable)
+	// {
+	// 	for (auto mdd : mdds)
+	// 	{
+	// 		delete mdd.second;
+	// 	}
+	// }
+	// lookupTable.clear();
 }
 
 unordered_map<int, MDDNode*> collectMDDlevel(MDD* mdd, int i)

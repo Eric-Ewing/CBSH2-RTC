@@ -48,9 +48,11 @@ Instance Instance::subInstance(vector<int> agents){
 	// num_of_agents = agents.size();
 	vector<int> new_start_locations = vector<int>();
 	vector<int> new_goal_locations = vector<int>();
-	for (int agent : agents){
+	for (int i = 0; i < agents.size(); i++){
+		int agent = agents[i];
 		new_start_locations.push_back(start_locations[agent]);
 		new_goal_locations.push_back(goal_locations[agent]);
+		// cout << "AGENTS" << agents[i] << ", " << start_locations[agent] << ", " << goal_locations[agent] << endl;
 	}
 	Instance new_instance = Instance(map_fname, agent_fname, num_of_agents, agent_indices, num_of_rows, num_of_cols, 0, 0);
 	new_instance.start_locations = new_start_locations;
