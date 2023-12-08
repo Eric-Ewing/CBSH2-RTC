@@ -2,16 +2,16 @@ from glob import glob
 import os
 import numpy as np
 import multiprocessing
-from tqdm import tqdm
+from tqdm.rich import tqdm
 
 agents = range(5, 205, 5)
 rectangular_reasoning = ["WDG", "CG"]
-corridor_reasoning = ["GC", "Disjoint"]
+corridor_reasoning = ["GC", "None"]
 maps = glob('maps/*.map')
 scens = glob('scens/*.scen')
 decompose = ["true", "false"]
-thresholds = np.arange(0.0, 0.5, 0.1)
-experiments_filename = "experiments.csv"
+thresholds = np.arange(0.0, 0.3, 0.1)
+experiments_filename = "experiments_boston_3.csv"
 commands = []
 for a in agents:
     for r in rectangular_reasoning:
@@ -19,6 +19,8 @@ for a in agents:
             for m in maps:
                 for s in scens:
                     map_name = m.split('/')[1].split('.')
+                    if ("Boston" not in map_name[0]):
+                        continue
                     if (map_name[0] not in s):
                         # print(m, s)
                         continue
@@ -40,6 +42,6 @@ for a in agents:
 print(len(commands))
 
 
-pool = multiprocessing.Pool()
+pool = multiprocessing.Pool(10)
 
 pool.map(os.system, tqdm(commands))

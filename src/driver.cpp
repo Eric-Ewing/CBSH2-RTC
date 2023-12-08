@@ -195,6 +195,7 @@ int main(int argc, char** argv)
 		string cacheComponentsFile = "components/" + vm["agents"].as<string>() + std::to_string(vm["agentNum"].as<int>())+std::to_string(vm["threshold"].as<double>())+ ".components";
 		ifstream f(cacheComponentsFile.c_str());
 		vector<vector<int>> componentsOfAgents;
+		clock_t start = clock();
 		if (boost::filesystem::exists(cacheComponentsFile)){
 			componentsOfAgents = loadComponentsFile(cacheComponentsFile);
 		}
@@ -203,7 +204,7 @@ int main(int argc, char** argv)
 			componentsOfAgents = cbs.getComponents(dependencies, dependencyThreshold);
 			saveComponentsFile(componentsOfAgents, cacheComponentsFile);
 		}
-
+		double decompTime = (double) (clock() - start) / CLOCKS_PER_SEC;
 		int min_f_value = 0;
 		vector<CBS> solvers = vector<CBS>();
 
@@ -224,14 +225,20 @@ int main(int argc, char** argv)
 			cbsSubinstance.setNodeLimit(vm["nodeLimit"].as<int>());
 
 			cbsSubinstance.solve(vm["cutoffTime"].as<double>(), 0); // solve
-
+			if (!cbsSubinstance.solution_found){
+				cout << "Solving Failed Subinstance" << endl;
+				cbsSubinstance.saveResults(vm["output"].as<string>(), vm["agents"].as<string>()+":"+ vm["agentIdx"].as<string>());
+				exit(0);
+			}
 			min_f_value += cbsSubinstance.min_f_val; //update min f value
 			solvers.emplace_back(cbsSubinstance); // update all solvers
-
 			cbs.initialRuntime += cbsSubinstance.runtime; // update runtime
 			cbs.fromSubinstance(cbsSubinstance, component); // add solved paths of sub-instances
+			cbs.maxCompRuntime = max(cbsSubinstance.runtime, cbs.maxCompRuntime);
 		}
+		cbs.decompTime = decompTime;
 		cbs.decomp = true;
+		cbs.decompThreshold = dependencyThreshold;
 		//////////////////////////////////////////////////////////////////////
 		/// run
 		//////////////////////////////////////////////////////////////////////

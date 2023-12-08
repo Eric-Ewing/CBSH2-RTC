@@ -32,7 +32,7 @@ public:
 	uint64_t num_HL_generated = 0;
 	uint64_t num_LL_expanded = 0;
 	uint64_t num_LL_generated = 0;
-
+	double decompThreshold = 0.0;
 
 	CBSNode* dummy_start = nullptr;
 	CBSNode* goal_node = nullptr;
@@ -44,6 +44,8 @@ public:
 	double min_f_val = 0;
 	double focal_list_threshold;
 	bool decomp = false;
+	double decompTime = 0.;
+	double maxCompRuntime = 0.;
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// set params
 	void setHeuristicType(heuristics_type h) {heuristic_helper.type = h; }

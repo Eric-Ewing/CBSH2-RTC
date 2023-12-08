@@ -590,7 +590,7 @@ void CBS::saveResults(const string& fileName, const string& instanceName) const
 	if (!exist)
 	{
 		ofstream addHeads(fileName);
-		addHeads << "runtime,#high-level expanded,#high-level generated,#low-level expanded,#low-level generated," <<
+		addHeads << "solutionFound,runtime,#high-level expanded,#high-level generated,#low-level expanded,#low-level generated," <<
 				 "solution cost,min f value,root g value,root f value," <<
 				 "#adopt bypasses," <<
 				 "standard conflicts,rectangle conflicts,corridor conflicts,target conflicts,mutex conflicts," <<
@@ -600,11 +600,12 @@ void CBS::saveResults(const string& fileName, const string& instanceName) const
 				 "runtime of rectangle conflicts,runtime of corridor conflicts,runtime of mutex conflicts," <<
 				 "runtime of building MDDs,runtime of building constraint tables,runtime of building CATs," <<
 				 "runtime of path finding,runtime of generating child nodes," <<
-				 "preprocessing runtime,solver name,instance name" << endl;
+				 "preprocessing runtime,solver name,instance name," << 
+				 "number of agents," << "decompTime," << "MaxCompRuntime," << "DecompThreshold," << "initialRuntime," << endl;
 		addHeads.close();
 	}
 	ofstream stats(fileName, std::ios::app);
-	stats << runtime << "," <<
+	stats << solution_found << "," << runtime << "," <<
 		  num_HL_expanded << "," << num_HL_generated << "," <<
 		  num_LL_expanded << "," << num_LL_generated << "," <<
 
@@ -626,7 +627,8 @@ void CBS::saveResults(const string& fileName, const string& instanceName) const
 		  mdd_helper.accumulated_runtime << "," << runtime_build_CT << "," << runtime_build_CAT << "," <<
 		  runtime_path_finding << "," << runtime_generate_child << "," <<
 
-		  runtime_preprocessing << "," << getSolverName() << "," << instanceName << endl;
+		  runtime_preprocessing << "," << getSolverName() << "," << instanceName << "," << num_of_agents << "," << decompTime << "," << maxCompRuntime << 
+		  "," << decompThreshold << endl;
 	stats.close();
 }
 
@@ -906,12 +908,12 @@ bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 	this->cost_upperbound = _cost_upperbound;
 	this->time_limit = _time_limit;
 
-	if (screen > 0) // 1 or 2
-	{
-		string name = getSolverName();
-		name.resize(35, ' ');
-		cout << name << ": ";
-	}
+	// if (screen > 0) // 1 or 2
+	// {
+	// 	string name = getSolverName();
+	// 	name.resize(35, ' ');
+	// 	cout << name << ": ";
+	// }
 	// set timer
 	start = clock();
 
@@ -1255,13 +1257,13 @@ bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 	if (!validateSolution())
 	{
 		cout << "Solution invalid!!!" << endl;
-		printPaths();
-		exit(-1);
+		// printPaths();
+		// exit(-1);
 	}
-	if (screen == 2)
-        printPaths();
-	if (screen > 0) // 1 or 2
-		printResults();
+	// if (screen == 2)
+    //     printPaths();
+	// if (screen > 0) // 1 or 2
+	// 	printResults();
 	return solution_found;
 }
 
@@ -1425,8 +1427,8 @@ inline void CBS::releaseNodes()
 
 CBS::~CBS()
 {
-	// // releaseNodes();
-	// mdd_helper.clear();
+	//releaseNodes();
+	mdd_helper.clear();
 }
 
 void CBS::clearSearchEngines()
