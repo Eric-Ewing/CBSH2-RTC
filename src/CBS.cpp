@@ -628,7 +628,7 @@ void CBS::saveResults(const string& fileName, const string& instanceName) const
 		  runtime_path_finding << "," << runtime_generate_child << "," <<
 
 		  runtime_preprocessing << "," << getSolverName() << "," << instanceName << "," << num_of_agents << "," << decompTime << "," << maxCompRuntime << 
-		  "," << decompThreshold << endl;
+		  "," << decompThreshold << "," << initialRuntime << endl;
 	stats.close();
 }
 

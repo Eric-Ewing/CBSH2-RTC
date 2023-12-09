@@ -4,7 +4,7 @@ import numpy as np
 import multiprocessing
 from tqdm.rich import tqdm
 
-agents = range(5, 205, 5)
+agents = range(5, 100, 5)
 rectangular_reasoning = ["WDG", "CG"]
 corridor_reasoning = ["GC", "None"]
 maps = glob('maps/*.map')
@@ -19,7 +19,7 @@ for a in agents:
             for m in maps:
                 for s in scens:
                     map_name = m.split('/')[1].split('.')
-                    if ("Boston" not in map_name[0]):
+                    if ("Paris" not in map_name[0]):
                         continue
                     if (map_name[0] not in s):
                         # print(m, s)
