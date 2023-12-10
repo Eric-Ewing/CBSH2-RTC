@@ -19,7 +19,7 @@ for a in agents:
             for m in maps:
                 for s in scens:
                     map_name = m.split('/')[1].split('.')
-                    if ("Paris" not in map_name[0]):
+                    if ("brc202" not in map_name[0]):
                         continue
                     if (map_name[0] not in s):
                         # print(m, s)

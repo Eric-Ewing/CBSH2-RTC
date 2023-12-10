@@ -822,9 +822,11 @@ vector<vector<double>> CBS::getDependencies(){
 	vector<vector<double>> dependencies;
 	dependencies.resize(mdds.size());
 	mdd_helper.init(num_of_agents);
+	double start = clock();
 	for (int i = 0; i < paths.size(); i++){
 		mdds.emplace_back(mdd_helper.getMDD(*focal_list.top(), i, paths[i]->size() + 2));
 	}
+	cout << "MDD Computation Time: " << (clock() - start) / (CLOCKS_PER_SEC) << endl;
 	
 	for (int i = 0; i < mdds.size(); i++){
 		dependencies.emplace_back(vector<double>());
