@@ -42,6 +42,6 @@ for a in agents:
 print(len(commands))
 
 
-pool = multiprocessing.Pool(10)
+    pool = multiprocessing.Pool(3)
 
-pool.map(os.system, tqdm(commands))
+    pool.map(os.system, tqdm(commands))
