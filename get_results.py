@@ -12,7 +12,10 @@ def make_plots(data):
     unique_num_agents = data['number of agents'].unique()
     completed_count = {(num_agents, solver): 0 for num_agents, solver in zip(unique_num_agents, unique_solver_names)}
     total_count = {(num_agents, solver): 0 for num_agents, solver in zip(unique_num_agents, unique_solver_names)}
-    
+
+    max_decomp_time = data.groupby(['number of agents', 'instance name', 'DecompThreshold'])['decompTime'].transform('max')
+    data['decompTime'] = max_decomp_time / 12
+    print(data['decompTime'])
 
     for index, row in data.iterrows():
         solver = row['solver name']
