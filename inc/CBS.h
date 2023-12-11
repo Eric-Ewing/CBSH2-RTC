@@ -81,6 +81,7 @@ public:
     void fromSubinstance(CBS subinstance, vector<int> sub_instance_agents);
 
 	vector<vector<double>> getDependencies();
+	bool checkOverlap(int a1, int a2);
 
     vector<vector<int>> getComponents(vector<vector<double>> dependencies, double threshold);
 

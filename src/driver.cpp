@@ -15,6 +15,15 @@
 
 using std::ifstream;
 
+void saveDependenciesFile(vector<vector<double>> dependencies){
+	ofstream f("dependencies.txt");
+	for (int i = 0; i < dependencies.size(); i++){
+		for (int j = 0; j < dependencies[i].size(); j++){
+			f << i << "," << j << "," << dependencies[i][j] << endl;
+		}
+	}
+}
+
 void saveComponentsFile(vector<vector<int>> components, string filename){
 	if (boost::filesystem::exists(filename)){
 		return;
@@ -201,6 +210,8 @@ int main(int argc, char** argv)
 		}
 		else{
 			vector<vector<double>> dependencies = cbs.getDependencies();
+			cout << "Made dependencies!" << endl;
+			// saveDependenciesFile(dependencies);
 			componentsOfAgents = cbs.getComponents(dependencies, dependencyThreshold);
 			saveComponentsFile(componentsOfAgents, cacheComponentsFile);
 		}
@@ -260,6 +271,9 @@ int main(int argc, char** argv)
 		if (cbs.solution_found && vm.count("outputPaths"))
 			cbs.savePaths(vm["outputPaths"].as<string>());
 		cbs.clearSearchEngines();
+		if (!cbs.solution_found){
+			cout << vm["map"].as<string>() << ", " << vm["agents"].as<string>() << ", " << endl;
+		}
 		return 0;
 	}
 	else{

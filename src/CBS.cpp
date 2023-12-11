@@ -814,6 +814,48 @@ void printComponents(vector<vector<int>> comps){
 		cout << endl;
 	}
 }
+
+bool CBS::checkOverlap(int a1, int a2){
+	return true;
+	int s1 = search_engines[a1]->start_location;
+	int s2 = search_engines[a2]->start_location;
+
+	int g1 = search_engines[a1]->goal_location;
+	int g2 = search_engines[a2]->goal_location;
+
+	int startX1 = search_engines[a1]->instance.getRowCoordinate(s1);
+	int startY1 = search_engines[a1]->instance.getColCoordinate(s1);
+
+	int goalX1 = search_engines[a1]->instance.getRowCoordinate(g1);
+	int goalY1 = search_engines[a1]->instance.getColCoordinate(g1);
+
+	int startX2 = search_engines[a1]->instance.getRowCoordinate(s2);
+	int startY2 = search_engines[a1]->instance.getColCoordinate(s2);
+
+	int goalX2 = search_engines[a1]->instance.getRowCoordinate(g2);
+	int goalY2 = search_engines[a1]->instance.getColCoordinate(g2);
+
+	if (startX1 < startX2 && goalX1 < goalX2 && startX1 < goalX2 && goalX1 < startX2){
+		// All of a1 is to the left of a2
+		return false;
+	}
+	else if(startX1 > startX2 && goalX1 > goalX2 && startX1 > goalX2 && goalX1 > startX2){
+		// All of a1 is to the right of a2
+		return false;
+	}
+	else if (startY1 < startY2 && goalY1 < goalY2 && startY1 < goalY2 && goalY1 < startY2){
+		// all of a1 is lower than all of a2
+		return false;
+	}
+	else if (startY1 > startY2 && goalY1 > goalY2 && startY1 > goalY2 && goalY1 > startY2){
+		// all of a1 is higher than all of a2
+		return false;
+	}
+	else{
+		return true;
+	}
+}
+
 vector<vector<double>> CBS::getDependencies(){
 	generateRoot();
 	auto curr = focal_list.top();
@@ -823,7 +865,7 @@ vector<vector<double>> CBS::getDependencies(){
 	dependencies.resize(mdds.size());
 	mdd_helper.init(num_of_agents);
 	for (int i = 0; i < paths.size(); i++){
-		mdds.emplace_back(mdd_helper.getMDD(*focal_list.top(), i, paths[i]->size() + 2));
+		mdds.emplace_back(mdd_helper.getMDD(*focal_list.top(), i, paths[i]->size()));
 	}
 	
 	for (int i = 0; i < mdds.size(); i++){
@@ -831,8 +873,13 @@ vector<vector<double>> CBS::getDependencies(){
 		dependencies[i].resize(mdds.size());
 		// dependencies[i] = vector<double>(mdds.size());
 		for (int j = i+1; j < mdds.size(); j++){
-			double dependence = heuristic_helper.quantifyDependence(i, j, *focal_list.top());
-			dependencies[i][j] = dependence;
+			if (checkOverlap(i, j)){
+				double dependence = heuristic_helper.quantifyDependence(i, j, *focal_list.top());
+				dependencies[i][j] = dependence;
+			}
+			else{
+				dependencies[i][j] = 0;
+			}
 		}
 	}
 	return  dependencies;
@@ -1257,6 +1304,7 @@ bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 	if (!validateSolution())
 	{
 		cout << "Solution invalid!!!" << endl;
+		solution_found = false;
 		// printPaths();
 		// exit(-1);
 	}
