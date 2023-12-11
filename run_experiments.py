@@ -4,14 +4,14 @@ import numpy as np
 import multiprocessing
 from tqdm.rich import tqdm
 
-agents = range(5, 100, 5)
+agents = range(5, 105, 5)
 rectangular_reasoning = ["WDG", "CG"]
 corridor_reasoning = ["GC", "None"]
 maps = glob('maps/*.map')
 scens = glob('scens/*.scen')
 decompose = ["true", "false"]
 thresholds = np.arange(0.0, 0.3, 0.1)
-experiments_filename = "experiments_boston_3.csv"
+experiments_filename = "experiments_den312.csv"
 commands = []
 for a in agents:
     for r in rectangular_reasoning:
@@ -19,7 +19,7 @@ for a in agents:
             for m in maps:
                 for s in scens:
                     map_name = m.split('/')[1].split('.')
-                    if ("brc202" not in map_name[0]):
+                    if ("den312" not in map_name[0]):
                         continue
                     if (map_name[0] not in s):
                         # print(m, s)
@@ -42,6 +42,6 @@ for a in agents:
 print(len(commands))
 
 
-pool = multiprocessing.Pool(10)
+pool = multiprocessing.Pool(6)
 
 pool.map(os.system, tqdm(commands))

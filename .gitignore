@@ -4,3 +4,12 @@ bin
 /scens/*
 /maps/
 CMakeFiles/*
+/components/*
+*.zip
+*.cmake
+cbs
+CMakeCache.txt
+dependencies.txt
+Makefile
+test.csv
+.vscode/c_cpp_properties.json
