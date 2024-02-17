@@ -733,35 +733,42 @@ double CBSHeuristic::SyncMDDsOverlap(const MDD &mdd1, const MDD &mdd2)
 
 	//probability of being at <location, time> for given agent using mdd
 	auto probability_maps = vector<boost::unordered_map<pair<int, int>, double>>();
-	for (auto mdd = mdds.begin(); mdd != mdds.end(); mdd++){
-		auto probability_map = boost::unordered_map<pair<int, int>, double>();
-		// insert start location
-		probability_map.insert({make_pair(mdd->levels[0].front()->location, 0), 1});
-		for(int i = 1; i < (*mdd).levels.size(); i++){
-			auto level = (*mdd).levels[i];
-			for (auto const& node : level){
-				int location = node->location;
-				int level = i;
-				double probability = 0; // sum over all parents / num_edges
-				for (auto const& parent : node->parents){
-					double parent_probability = probability_map.find(make_pair(parent->location, parent->level))->second;
-					// cout << "Parent Probability: " << parent_probability << endl;
-					probability += parent_probability / parent->children.size();
+	probability_maps.push_back(boost::unordered_map<pair<int, int>, double>());
+	probability_maps.push_back(boost::unordered_map<pair<int, int>, double>());
+
+
+	for (int i = 0; i < mdds.begin()->levels.size(); i++){
+		for (auto mdd = mdds.begin(); mdd != mdds.end(); mdd++){
+			int idx = 0;
+			if (mdd == mdds.begin()){
+				idx = 0;
+			}
+			else{
+				idx = 1;
+			}
+			if (i == 0){
+				// prob of being at start at time 0 = 1
+				probability_maps[idx].insert({make_pair(mdd->levels[0].front()->location, 0), 1});
+			}
+			else{
+				auto level = (*mdd).levels[i];
+				for (auto const& node : level){
+					int location = node->location;
+					int level = i;
+					double probability = 0; // sum over all parents / num_edges
+					for (auto const& parent : node->parents){
+						double parent_probability = probability_maps[idx].find(make_pair(parent->location, parent->level))->second;
+						// cout << "Parent Probability: " << parent_probability << endl;
+						probability += parent_probability / parent->children.size();
+					}
+					// cout << "-----Probability--------" << probability << ", " << location << ", " << level << endl;
+					probability_maps[idx].insert({make_pair(location, level), probability});
 				}
-				// cout << "-----Probability--------" << probability << ", " << location << ", " << level << endl;
-				probability_map.insert({make_pair(location, level), probability});
 			}
 		}
-		probability_maps.push_back(probability_map);
-	}
-	// for (auto &const level : copy.levels){
-		// cout << "Num Levels: " << mdd1.levels.size() << endl;
-	for (int i = 1; i < copy.levels.size(); i++){
-		auto level = copy.levels[i];
-		// cout << level.size();
+		auto level = mdds[0].levels[i];
 		double probability_for_level = 0;
 		for (auto node : level){
-			// TODO check if loc/level is in each mdd...
 			auto loc1 = probability_maps[0].find(make_pair(node->location, i));
 			auto loc2 = probability_maps[1].find(make_pair(node->location, i));
 			if (loc1 != probability_maps[0].end() && loc2 != probability_maps[1].end()){
@@ -769,8 +776,52 @@ double CBSHeuristic::SyncMDDsOverlap(const MDD &mdd1, const MDD &mdd2)
 				// cout << "location: " << node->location << " time: " << i << " probability: " << probability_for_level << endl;
 			}
 		}
-		probability_of_collision = max(probability_of_collision, probability_for_level);
+		if (probability_for_level > 0.3){
+			return probability_for_level;
+		}
+		else{
+			probability_of_collision = max(probability_for_level, probability_of_collision);
+		}
 	}
+
+	// for (auto mdd = mdds.begin(); mdd != mdds.end(); mdd++){
+	// 	auto probability_map = boost::unordered_map<pair<int, int>, double>();
+	// 	// insert start location
+	// 	probability_map.insert({make_pair(mdd->levels[0].front()->location, 0), 1});
+	// 	for(int i = 1; i < (*mdd).levels.size(); i++){
+	// 		auto level = (*mdd).levels[i];
+	// 		for (auto const& node : level){
+	// 			int location = node->location;
+	// 			int level = i;
+	// 			double probability = 0; // sum over all parents / num_edges
+	// 			for (auto const& parent : node->parents){
+	// 				double parent_probability = probability_map.find(make_pair(parent->location, parent->level))->second;
+	// 				// cout << "Parent Probability: " << parent_probability << endl;
+	// 				probability += parent_probability / parent->children.size();
+	// 			}
+	// 			// cout << "-----Probability--------" << probability << ", " << location << ", " << level << endl;
+	// 			probability_map.insert({make_pair(location, level), probability});
+	// 		}
+	// 	}
+	// 	probability_maps.push_back(probability_map);
+	// }
+	// // for (auto &const level : copy.levels){
+	// 	// cout << "Num Levels: " << mdd1.levels.size() << endl;
+	// for (int i = 1; i < copy.levels.size(); i++){
+	// 	auto level = copy.levels[i];
+	// 	// cout << level.size();
+	// 	double probability_for_level = 0;
+	// 	for (auto node : level){
+	// 		// TODO check if loc/level is in each mdd...
+	// 		auto loc1 = probability_maps[0].find(make_pair(node->location, i));
+	// 		auto loc2 = probability_maps[1].find(make_pair(node->location, i));
+	// 		if (loc1 != probability_maps[0].end() && loc2 != probability_maps[1].end()){
+	// 			probability_for_level += probability_maps[0].find(make_pair(node->location, i))->second * probability_maps[1].find(make_pair(node->location, i))->second;
+	// 			// cout << "location: " << node->location << " time: " << i << " probability: " << probability_for_level << endl;
+	// 		}
+	// 	}
+	// 	probability_of_collision = max(probability_of_collision, probability_for_level);
+	// }
 	// copy.clear();
 	return probability_of_collision;
 }

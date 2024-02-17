@@ -80,11 +80,13 @@ public:
     bool combineSubInstances(CBS instance2);
     void fromSubinstance(CBS subinstance, vector<int> sub_instance_agents);
 
-	vector<vector<double>> getDependencies();
+	vector<vector<double>> getDependencies(double cutoffTime);
 	bool checkOverlap(int a1, int a2);
 
-    vector<vector<int>> getComponents(vector<vector<double>> dependencies, double threshold);
+    vector<vector<int>> getComponents(vector<vector<double>> dependencies, double threshold, double cutoffTime);
 
+	void printResults() const;
+    bool validateSolution() const;
 private:
     bool target_reasoning; // using target reasoning
 	bool disjoint_splitting; // disjoint splitting
@@ -154,10 +156,8 @@ private:
 
 	// print and save
 	void printPaths() const;
-	void printResults() const;
 	static void printConflicts(const CBSNode &curr);
 
-    bool validateSolution() const;
     inline int getAgentLocation(int agent_id, size_t timestep) const;
     inline void pushNode(CBSNode* node);
 };

@@ -743,7 +743,7 @@ string CBS::getSolverName() const
 		name += "+BP";
 	name += " with " + search_engines[0]->getName();
 	if (decomp == true){
-		name += "and Decomp";
+		name += " and Decomp";
 	}
 	return name;
 }
@@ -788,21 +788,21 @@ vector<int> DFS(boost::unordered_map<int, vector<int>> G, int i, bool visited[])
 // 	return numComponents;
 // }
 
-vector<vector<int>> getComponents(boost::unordered_map<int, vector<int>> CG){
-	int numAgents = CG.size();
-	bool* visited = new bool[numAgents];
-	vector<vector<int>> components = vector<vector<int>> ();
-	for (int i = 0; i < numAgents; i++){
-		visited[i] = false;
-	}
-	for (int i = 0; i < numAgents; i++){
-		if (visited[i] == false){
-			auto component = DFS(CG, i, visited);
-			components.push_back(component);
-		}
-	}
-	return components;
-}
+// vector<vector<int>> getComponents(boost::unordered_map<int, vector<int>> CG, double cutoffTime{
+// 	int numAgents = CG.size();
+// 	bool* visited = new bool[numAgents];
+// 	vector<vector<int>> components = vector<vector<int>> ();
+// 	for (int i = 0; i < numAgents; i++){
+// 		visited[i] = false;
+// 	}
+// 	for (int i = 0; i < numAgents; i++){
+// 		if (visited[i] == false){
+// 			auto component = DFS(CG, i, visited);
+// 			components.push_back(component);
+// 		}
+// 	}
+// 	return components;
+// }
 
 void printComponents(vector<vector<int>> comps){
 	cout << comps.size() << endl;
@@ -816,7 +816,6 @@ void printComponents(vector<vector<int>> comps){
 }
 
 bool CBS::checkOverlap(int a1, int a2){
-	return true;
 	int s1 = search_engines[a1]->start_location;
 	int s2 = search_engines[a2]->start_location;
 
@@ -856,8 +855,9 @@ bool CBS::checkOverlap(int a1, int a2){
 	}
 }
 
-vector<vector<double>> CBS::getDependencies(){
+vector<vector<double>> CBS::getDependencies(double cutoffTime){
 	generateRoot();
+	double start = clock();
 	auto curr = focal_list.top();
 	updatePaths(focal_list.top());
 	vector<MDD*> mdds = vector<MDD*>();
@@ -873,6 +873,9 @@ vector<vector<double>> CBS::getDependencies(){
 		dependencies[i].resize(mdds.size());
 		// dependencies[i] = vector<double>(mdds.size());
 		for (int j = i+1; j < mdds.size(); j++){
+			if ((double) (clock() - start) / CLOCKS_PER_SEC > cutoffTime){
+				return dependencies;
+			}
 			if (checkOverlap(i, j)){
 				double dependence = heuristic_helper.quantifyDependence(i, j, *focal_list.top());
 				dependencies[i][j] = dependence;
@@ -886,12 +889,17 @@ vector<vector<double>> CBS::getDependencies(){
 
 }
 
-vector<vector<int>> CBS::getComponents(vector<vector<double>> dependencies, double threshold){
+vector<vector<int>> CBS::getComponents(vector<vector<double>> dependencies, double threshold, double cutoffTime){
 	unordered_map<int, unordered_set<int>*> setMembership = unordered_map<int, unordered_set<int>*>();
+	double start = (double) clock();
 	for(int i = 0; i < dependencies.size(); i++){
 		for (int j = i+1; j < dependencies[i].size(); j++){
 		int a1 = i;
 		int a2 = j;
+		if (((double) clock() - start) / CLOCKS_PER_SEC > cutoffTime){
+			cout << "Decomp over cutoff time" << (clock() - start) / CLOCKS_PER_SEC << endl;
+			exit(1);
+		}
 		if (dependencies[i][j] > threshold){
 			if (setMembership.find(a1) == setMembership.end() && setMembership.find(a2) == setMembership.end()){
 				// If neither agent exists, make new singleton components for each
@@ -1303,7 +1311,7 @@ bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 	// if (solution_found && !validateSolution())
 	if (!validateSolution())
 	{
-		cout << "Solution invalid!!!" << endl;
+		// cout << "Solution invalid!!!" << endl;
 		solution_found = false;
 		// printPaths();
 		// exit(-1);
@@ -1510,15 +1518,15 @@ bool CBS::validateSolution() const
 				int loc2 = paths[a2]->at(timestep).location;
 				if (loc1 == loc2)
 				{
-					cout << "Agents " << a1 << " and " << a2 << " collides at " << loc1 << " at timestep " << timestep << endl;
+					//cout << "Agents " << a1 << " and " << a2 << " collides at " << loc1 << " at timestep " << timestep << endl;
 					return false;
 				}
 				else if (timestep < min_path_length - 1
 						 && loc1 == paths[a2]->at(timestep + 1).location
 						 && loc2 == paths[a1]->at(timestep + 1).location)
 				{
-					cout << "Agents " << a1 << " and " << a2 << " collides at (" <<
-						 loc1 << "-->" << loc2 << ") at timestep " << timestep << endl;
+					//cout << "Agents " << a1 << " and " << a2 << " collides at (" <<
+					//	 loc1 << "-->" << loc2 << ") at timestep " << timestep << endl;
 					return false;
 				}
 			}
@@ -1532,7 +1540,7 @@ bool CBS::validateSolution() const
 					int loc2 = paths[a2_]->at(timestep).location;
 					if (loc1 == loc2)
 					{
-						cout << "Agents " << a1 << " and " << a2 << " collides at " << loc1 << " at timestep " << timestep << endl;
+						//cout << "Agents " << a1 << " and " << a2 << " collides at " << loc1 << " at timestep " << timestep << endl;
 						return false; // It's at least a semi conflict			
 					}
 				}

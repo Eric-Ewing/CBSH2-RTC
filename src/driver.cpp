@@ -24,12 +24,14 @@ void saveDependenciesFile(vector<vector<double>> dependencies){
 	}
 }
 
-void saveComponentsFile(vector<vector<int>> components, string filename){
-	if (boost::filesystem::exists(filename)){
+void saveComponentsFile(vector<vector<int>> components, string filenameComponents, double time, string filenameTime){
+	if (boost::filesystem::exists(filenameComponents)){
+		cout << filenameComponents << endl;
 		return;
 	}
 	else{
-		ofstream f(filename.c_str());
+		cout << filenameComponents << endl;
+		ofstream f(filenameComponents.c_str());
 		for (auto component : components){
 			for (int agent : component){
 				f << agent << ", ";
@@ -37,6 +39,8 @@ void saveComponentsFile(vector<vector<int>> components, string filename){
 			f << endl;
 		}
 	}
+	ofstream f(filenameTime.c_str());
+	f << time;
 }
 
 vector<vector<int>> loadComponentsFile(const string &filename) {
@@ -60,6 +64,18 @@ vector<vector<int>> loadComponentsFile(const string &filename) {
     }
 
     return components;
+}
+
+double loadTimingFile(const string &filename) {
+	ifstream f(filename.c_str());
+	double decompTime = 0;
+	if (!f) {
+        cerr << "Error opening file for reading: " << filename << endl;
+        exit(1); // Return an empty vector in case of an error
+    }
+
+    f >> decompTime;
+	return decompTime;
 }
 
 /* Main function */
@@ -103,6 +119,7 @@ int main(int argc, char** argv)
 		("sipp", po::value<bool>()->default_value(false), "using sipp as the single agent solver")
 		("decompose", po::value<bool>()->default_value(false), "perform instance decomposition")
 		("threshold", po::value<double>()->default_value(0), "Threshold for dependency")
+		("ID", po::value<bool>()->default_value(false), "Use Independence Detection Algorithm")
 		;
 
 	po::variables_map vm;
@@ -180,8 +197,10 @@ int main(int argc, char** argv)
 	srand(vm["seed"].as<int>());
 
 	int runs = vm["restart"].as<int>();
-
-	if (vm["decompose"].as<bool>()){
+	if (vm["ID"].as<bool>()){
+		
+	}
+	else if (vm["decompose"].as<bool>()){
 		//////////////////////////////////////////////////////////////////////
 		/// initialize the solver
 		//////////////////////////////////////////////////////////////////////
@@ -202,20 +221,29 @@ int main(int argc, char** argv)
 		double dependencyThreshold = vm["threshold"].as<double>();
 		
 		string cacheComponentsFile = "components/" + vm["agents"].as<string>() + std::to_string(vm["agentNum"].as<int>())+std::to_string(vm["threshold"].as<double>())+ ".components";
+		string timingComponentsFile = "components/" + vm["agents"].as<string>() + std::to_string(vm["agentNum"].as<int>())+std::to_string(vm["threshold"].as<double>())+ ".timing";
 		ifstream f(cacheComponentsFile.c_str());
 		vector<vector<int>> componentsOfAgents;
+		double decompTime = 0;
 		clock_t start = clock();
 		if (boost::filesystem::exists(cacheComponentsFile)){
+			cout << "Loaded!" << endl;
 			componentsOfAgents = loadComponentsFile(cacheComponentsFile);
+			decompTime = loadTimingFile(timingComponentsFile);
 		}
 		else{
-			vector<vector<double>> dependencies = cbs.getDependencies();
-			cout << "Made dependencies!" << endl;
-			// saveDependenciesFile(dependencies);
-			componentsOfAgents = cbs.getComponents(dependencies, dependencyThreshold);
-			saveComponentsFile(componentsOfAgents, cacheComponentsFile);
+			vector<vector<double>> dependencies = cbs.getDependencies(vm["cutoffTime"].as<double>()*12);
+			decompTime = (double) (clock() - start) / CLOCKS_PER_SEC;
+			cout << "Made dependencies!" << decompTime << endl;
+			componentsOfAgents = cbs.getComponents(dependencies, dependencyThreshold, vm["cutoffTime"].as<double>()*12);
+			decompTime = (double) (clock() - start) / CLOCKS_PER_SEC;
+			cout << "Made Components" << decompTime << endl;
+			saveComponentsFile(componentsOfAgents, cacheComponentsFile, decompTime, timingComponentsFile);
+			cout << "saved!" << endl;
+			cout << "Loaded!" << endl;
+			componentsOfAgents = loadComponentsFile(cacheComponentsFile);
+			decompTime = loadTimingFile(timingComponentsFile);
 		}
-		double decompTime = (double) (clock() - start) / CLOCKS_PER_SEC;
 		int min_f_value = 0;
 		vector<CBS> solvers = vector<CBS>();
 
@@ -239,7 +267,7 @@ int main(int argc, char** argv)
 			if (!cbsSubinstance.solution_found){
 				cout << "Solving Failed Subinstance" << endl;
 				cbsSubinstance.saveResults(vm["output"].as<string>(), vm["agents"].as<string>()+":"+ vm["agentIdx"].as<string>());
-				exit(0);
+				exit(1);
 			}
 			min_f_value += cbsSubinstance.min_f_val; //update min f value
 			solvers.emplace_back(cbsSubinstance); // update all solvers
@@ -254,7 +282,8 @@ int main(int argc, char** argv)
 		/// run
 		//////////////////////////////////////////////////////////////////////
 		double runtime = 0;
-		cbs.solve(vm["cutoffTime"].as<double>(), min_f_value);
+		cbs.solve(vm["cutoffTime"].as<double>() - decompTime, min_f_value);
+		cbs.solution_found &= cbs.validateSolution();
 		
 
 		// bool valid = cbs2.combineSubInstances(cbs);
@@ -272,7 +301,10 @@ int main(int argc, char** argv)
 			cbs.savePaths(vm["outputPaths"].as<string>());
 		cbs.clearSearchEngines();
 		if (!cbs.solution_found){
-			cout << vm["map"].as<string>() << ", " << vm["agents"].as<string>() << ", " << endl;
+			cout << "failed! " << vm["map"].as<string>() << ", " << vm["agents"].as<string>() << ", " << endl;
+		}
+		else{
+			cbs.printResults();
 		}
 		return 0;
 	}
@@ -301,7 +333,9 @@ int main(int argc, char** argv)
 		for (int i = 0; i < runs; i++)
 		{
 			cbs.clear();
+			cout << "Starting to solve" << endl;
 			cbs.solve(vm["cutoffTime"].as<double>(), min_f_val);
+			cout << "solved!" << endl;
 			runtime += cbs.runtime;
 			if (cbs.solution_found)
 				break;
@@ -324,6 +358,7 @@ int main(int argc, char** argv)
 		if (cbs.solution_found && vm.count("outputPaths"))
 			cbs.savePaths(vm["outputPaths"].as<string>());
 		cbs.clearSearchEngines();
+		cbs.printResults();
 		return 0;
 	}
 }

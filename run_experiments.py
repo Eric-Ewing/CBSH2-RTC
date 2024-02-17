@@ -1,47 +1,91 @@
 from glob import glob
-import os
 import numpy as np
-import multiprocessing
 from tqdm.rich import tqdm
 
-agents = range(5, 105, 5)
-rectangular_reasoning = ["WDG", "CG"]
-corridor_reasoning = ["GC", "None"]
-maps = glob('maps/*.map')
+from subprocess import Popen, PIPE
+
+fails_dict = {}
+counter = 0
+up_to_date = False
+
+
+def extract_args(command):
+    scen = command.split('-a')[1].split(' ')[1]
+    k = command.split('-k')[1].split(' ')[1]
+    rr = command.split('--heuristics=')[1].split('\n')[0]
+    cr = command.split('--corridorReasoning=')[1].split('\n')[0]
+    sipp = command.split('--sipp=')[1]
+    decomp = command.split('--decompose=')[1].split(' ')[0]
+    theta = command.split('--threshold=')[1].split(' ')[0]
+
+    return scen, k, rr, cr, sipp, decomp, theta
+
+
+def execute_command(command):
+    global up_to_date
+    # if not up_to_date:
+    # if command == './cbs -m socs_maps/den312d.map -a scens/den312d-even-13.scen -o experiments/socs_experiments.csv -k 40 -t 300 --decompose=true --heuristics=CG --corridorReasoning=None --threshold=0.2 --sipp=0':
+    #     up_to_date = True
+    #     print('match')
+    #     return
+    # else:
+    #     return
+
+    global fails_dict
+    # Check if 10 fails for any of previous n agents...
+    scen, k, rr, cr, sipp, decomp, theta = extract_args(command)
+    prev_agents = int(k) - 5
+    args_str = ''.join([scen, str(prev_agents), rr, cr, sipp, decomp, theta])
+    if args_str in fails_dict:
+        if fails_dict[args_str] >= 1:
+            print(command)
+            fails_dict[''.join([scen, k, rr, cr, sipp, decomp, theta])] = 1
+            print('exit!')
+            return
+    # print(command)
+    p = Popen('timeout 320s ' + command, shell=True, stdout=PIPE, stderr=PIPE)
+    out, err = p.communicate()
+    if not ('Optimal' in str(out)):
+        key = ''.join([scen, k, rr, cr, sipp, decomp, theta])
+        if key not in fails_dict:
+            fails_dict[key] = 0
+        fails_dict[key] += 1
+        print('failed!')
+        print(command)
+
+
+agents = range(5, 250, 5)
+rectangular_reasoning = ["WDG"]
+corridor_reasoning = ["GC"]
+use_sipp = [True, False]
+maps = glob('socs_maps/*.map')
 scens = glob('scens/*.scen')
 decompose = ["true", "false"]
 thresholds = np.arange(0.0, 0.3, 0.1)
-experiments_filename = "experiments_den312.csv"
+experiments_filename = "experiments/socs_experiments_v3.csv"
 commands = []
+
 for a in agents:
     for r in rectangular_reasoning:
         for c in corridor_reasoning:
             for m in maps:
                 for s in scens:
-                    map_name = m.split('/')[1].split('.')
-                    if ("den312" not in map_name[0]):
-                        continue
-                    if (map_name[0] not in s):
-                        # print(m, s)
-                        continue
-                    for d in decompose:
-                        if d == "true":
-                            for t in thresholds:
-                                command = f"./cbs -m {m} -a {s} \
-                                    -o {experiments_filename} \
-                                    -k {a} -t 60 --decompose={d} --heuristics={r} \
-                                    --corridorReasoning={c}\
-                                    --threshold={t}"
+                    for sipp in use_sipp:
+                        sipp = int(sipp)
+                        map_name = m.split('/')[-1].split('.')
+                        if (map_name[0] not in s):
+                            # print(m, s)
+                            continue
+                        for d in decompose:
+                            if d == "true":
+                                for t in thresholds:
+                                    command = f"./cbs -m {m} -a {s} -o {experiments_filename} -k {a} -t 300 --decompose={d} --heuristics={r} --corridorReasoning={c} --threshold={t} --sipp={sipp}"
+                                    commands.append(command) 
+                                    command = f"./cbs -m {m} -a {s} -o {experiments_filename} -k {a} -t 300 --decompose={d} --heuristics={r} --corridorReasoning={c} --threshold={t} --sipp={sipp}"
+                                    commands.append(command)
+                            else:
+                                command = f"./cbs -m {m} -a {s} -o {experiments_filename} -k {a} -t 300 --decompose={d} --heuristics={r} --corridorReasoning={c} --threshold={t} --sipp={sipp}"
                                 commands.append(command)
-                        else:
-                            command = f"./cbs -m {m} -a {s} \
-                                -o {experiments_filename} \
-                                -k {a} -t 60 --decompose={d} --heuristics={r} \
-                                --corridorReasoning={c}"
-                            commands.append(command)
 print(len(commands))
-
-
-pool = multiprocessing.Pool(6)
-
-pool.map(os.system, tqdm(commands))
+for c in tqdm(commands):
+    execute_command(c)
