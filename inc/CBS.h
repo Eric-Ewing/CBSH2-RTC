@@ -36,7 +36,7 @@ public:
 
 	CBSNode* dummy_start = nullptr;
 	CBSNode* goal_node = nullptr;
-
+	Instance instance;
 	double initialRuntime = 0;
 
 	bool solution_found = false;
@@ -82,7 +82,7 @@ public:
 
 	vector<vector<double>> getDependencies(double cutoffTime);
 	bool checkOverlap(int a1, int a2);
-
+	bool IDSolve(double time_limit, int cost_lowerbound = 0, int cost_upperbound = MAX_COST);
     vector<vector<int>> getComponents(vector<vector<double>> dependencies, double threshold, double cutoffTime);
 
 	void printResults() const;

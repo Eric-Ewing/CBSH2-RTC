@@ -957,6 +957,106 @@ vector<vector<int>> CBS::getComponents(vector<vector<double>> dependencies, doub
 	return components;
 }
 
+bool CBS::IDSolve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
+{
+	this->min_f_val = _cost_lowerbound;
+	this->cost_upperbound = _cost_upperbound;
+	this->time_limit = _time_limit;
+	start = clock();
+
+	generateRoot();
+
+	unordered_map<int, vector<int>> groups = unordered_map<int, vector<int>>();
+	
+	while(!solution_found)	
+	{
+		runtime = (double) (clock() - start) / CLOCKS_PER_SEC;
+		if (runtime > time_limit){
+			solution_found = false;
+			break;
+		}
+		CBSNode* currNode = open_list.top();
+
+		// Get first conflict
+		shared_ptr<Conflict> conflict = currNode->conflicts.front();
+
+		// Get agents in conflict
+		int a1 = conflict->a1;
+		int a2 = conflict->a2;
+
+		// Get groups of agents
+		if (groups.find(a1) != groups.end())
+		{
+			if (groups.find(a2) != groups.end())
+			{
+				groups[a1].insert(groups[a1].begin(), groups[a2].begin(), groups[a2].end());
+				groups[a2] = groups[a1];
+			}
+			else
+			{
+				groups[a1].emplace_back(a2);
+				groups[a2] = groups[a1];
+			}
+		}
+		else
+		{
+			if (groups.find(a2) != groups.end())
+			{
+				groups[a2].emplace_back(a1);
+				groups[a1] = groups[a2];
+			}
+			else
+			{
+				groups[a1] = vector<int>();
+				groups[a1].emplace_back(a1);
+				groups[a1].emplace_back(a2);
+				groups[a2] = groups[a1];
+			}
+		}
+
+		vector<int> subInstanceAgents = groups[a1];
+
+		// Create sub-instance for merged agents
+		Instance subInstance = this->instance.subInstance(subInstanceAgents);
+
+		// solve sub-instance for merged agents
+		CBS cbsSubinstance = CBS(subInstance, false, 0);
+		// cbsSubinstance cbs(instance, vm["sipp"].as<bool>(), vm["screen"].as<int>());
+		cbsSubinstance.setPrioritizeConflicts(true);
+		cbsSubinstance.setDisjointSplitting(false);
+		cbsSubinstance.setBypass(true);
+		cbsSubinstance.setRectangleReasoning(rectangle_strategy::GR);
+		cbsSubinstance.setCorridorReasoning(corridor_strategy::GC);
+		cbsSubinstance.setHeuristicType(heuristics_type::WDG);
+		cbsSubinstance.setTargetReasoning(true);
+		cbsSubinstance.setMutexReasoning(true);
+		cbsSubinstance.setSavingStats(true);
+		cbsSubinstance.setNodeLimit(INT32_MAX);
+
+		cbsSubinstance.solve((300 - clock() - start), 0); // solve
+
+		// find conflicts
+		// this->fromSubinstance(cbsSubinstance, subInstanceAgents);
+		int j = 0;
+		for (int i = 0; i < num_of_agents; i++){
+			// asumes agents are given in numerical order
+			if (j < subInstanceAgents.size() && i == subInstanceAgents[j]){
+				paths[i] = cbsSubinstance.paths[j];
+				// paths_found_initially.emplace_back(*subinstance.paths[j]);
+				// initial_constraints[i] = subinstance.initial_constraints[j];
+				j++;
+			}
+		}
+
+		// If no conflicts, return solution found
+		findConflicts(*currNode);
+		if (currNode->conflicts.size() == 0)
+		{
+			return true;
+		}
+	}
+}
+
 bool CBS::solve(double _time_limit, int _cost_lowerbound, int _cost_upperbound)
 {
 	this->min_f_val = _cost_lowerbound;
@@ -1367,7 +1467,7 @@ CBS::CBS(const Instance& instance, bool sipp, int screen) :
 	runtime_preprocessing = (double) (clock() - t) / CLOCKS_PER_SEC;
 
 	mutex_helper.search_engines = search_engines;
-
+	this->instance = instance;
 	if (screen >= 2) // print start and goals
 	{
 		instance.printAgents();
