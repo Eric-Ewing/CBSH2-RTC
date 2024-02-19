@@ -981,8 +981,18 @@ bool CBS::IDSolve(double _time_limit, int _cost_lowerbound, int _cost_upperbound
 		shared_ptr<Conflict> conflict = currNode->conflicts.front();
 
 		// Get agents in conflict
+		// if (conflict == currNode->conflicts.end()){
+		// 	solution_found = true;
+		// 	return true;
+		// }
+		cout << "A1, A2" << endl;
+		if (conflict == nullptr){
+			solution_found = true;
+			return true;
+		}
 		int a1 = conflict->a1;
 		int a2 = conflict->a2;
+		cout << "after" << endl;
 
 		// Get groups of agents
 		if (groups.find(a1) != groups.end())

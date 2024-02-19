@@ -40,7 +40,6 @@ def make_completion_rate_per_map(data, map_name, sa_solver='Star'):
 
     ys = {a: [] for a in algorithms}
     xs = []
-
     for algorithm in algorithms:
         if 'Decomp' not in algorithm:
             linestyle = '--'
@@ -66,7 +65,7 @@ def make_completion_rate_per_map(data, map_name, sa_solver='Star'):
         solver_label = algorithm.replace('WDG+GR+GC+T+BP', 'CBSH')
         solver_label = solver_label.replace(' with SIPP', '')
         solver_label = solver_label.replace(' with AStar', '')
-        solver_label = solver_label.replace(' and Decomp', ' and Decomp. +θ=')
+        solver_label = solver_label.replace(' and Decomp', ' and Decomp. θ=')
         plt.plot(x, y, label=solver_label, linestyle=linestyle)
 
     plt.xlabel('Number of Agents')
