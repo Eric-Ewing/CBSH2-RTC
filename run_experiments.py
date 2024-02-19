@@ -23,13 +23,15 @@ def extract_args(command):
 
 def execute_command(command):
     global up_to_date
-    # if not up_to_date:
-    # if command == './cbs -m socs_maps/den312d.map -a scens/den312d-even-13.scen -o experiments/socs_experiments.csv -k 40 -t 300 --decompose=true --heuristics=CG --corridorReasoning=None --threshold=0.2 --sipp=0':
-    #     up_to_date = True
-    #     print('match')
-    #     return
-    # else:
-    #     return
+    if not up_to_date:
+        if command == './cbs -m socs_maps/Berlin_1_256.map -a scens/Berlin_1_256-even-8.scen -o experiments/socs_experiments_v6.csv -k 45 -t 300 --decompose=true --heuristics=WDG --corridorReasoning=GC --threshold=0.1 --sipp=1':
+            up_to_date = True
+            print('match')
+            return
+        else:
+            return
+    if 'maze' in command:
+        return
 
     global fails_dict
     # Check if 10 fails for any of previous n agents...
@@ -52,6 +54,8 @@ def execute_command(command):
         fails_dict[key] += 1
         print('failed!')
         print(command)
+        with open('failed_experiments.txt', 'a') as f:
+            f.write(command + '\n')
 
 
 agents = range(5, 250, 5)
@@ -62,7 +66,7 @@ maps = glob('socs_maps/*.map')
 scens = glob('scens/*.scen')
 decompose = ["true", "false"]
 thresholds = np.arange(0.0, 0.3, 0.1)
-experiments_filename = "experiments/socs_experiments_v3.csv"
+experiments_filename = "experiments/socs_experiments_v6.csv"
 commands = []
 
 for a in agents:
@@ -81,11 +85,23 @@ for a in agents:
                                 for t in thresholds:
                                     command = f"./cbs -m {m} -a {s} -o {experiments_filename} -k {a} -t 300 --decompose={d} --heuristics={r} --corridorReasoning={c} --threshold={t} --sipp={sipp}"
                                     commands.append(command) 
-                                    command = f"./cbs -m {m} -a {s} -o {experiments_filename} -k {a} -t 300 --decompose={d} --heuristics={r} --corridorReasoning={c} --threshold={t} --sipp={sipp}"
-                                    commands.append(command)
+                                    # command = f"./cbs -m {m} -a {s} -o {experiments_filename} -k {a} -t 300 --decompose={d} --heuristics={r} --corridorReasoning={c} --threshold={t} --sipp={sipp}"
+                                    # commands.append(command)
                             else:
                                 command = f"./cbs -m {m} -a {s} -o {experiments_filename} -k {a} -t 300 --decompose={d} --heuristics={r} --corridorReasoning={c} --threshold={t} --sipp={sipp}"
                                 commands.append(command)
+with open('failed_experiments.txt', 'r') as f:
+    try:
+        while True:
+            command = f.readline()
+            scen, k, rr, cr, sipp, decomp, theta = extract_args(command)
+            key = ''.join([scen, k, rr, cr, sipp, decomp, theta])
+            if key not in fails_dict:
+                fails_dict[key] = 0
+            fails_dict[key] += 1
+    except:
+        pass
+
 print(len(commands))
 for c in tqdm(commands):
     execute_command(c)
