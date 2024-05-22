@@ -1,0 +1,6 @@
+[submodule "lib/lazy-cbs-mirror"]
+	path = lib/lazy-cbs-mirror
+	url = https://github.com/vikikkdi/lazy-cbs-mirror.git
+[submodule "lib/bcp-mapf"]
+	path = lib/bcp-mapf
+	url = https://github.com/ed-lam/bcp-mapf.git

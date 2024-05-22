@@ -10,7 +10,7 @@ def make_completion_rate_per_map(data, map_name, sa_solver='Star'):
 
     # Rename solver, as it was misspelled in the cpp file
     if sa_solver == 'SIPP':
-        sa_solver = 'SIPPS'
+        sa_solver = 'SIPP'
 
     # Set full name
     for i, row in data.iterrows():
@@ -62,11 +62,22 @@ def make_completion_rate_per_map(data, map_name, sa_solver='Star'):
         if len(x) > len(xs):
             xs = x
         ys[algorithm] = y
-        solver_label = algorithm.replace('WDG+GR+GC+T+BP', 'CBSH')
+        solver_label = algorithm.replace('WDG+GR+GC+T+BP', 'CBSH2')
         solver_label = solver_label.replace(' with SIPP', '')
         solver_label = solver_label.replace(' with AStar', '')
         solver_label = solver_label.replace(' and Decomp', ' and Decomp. θ=')
         plt.plot(x, y, label=solver_label, linestyle=linestyle)
+
+    if 'ht_man' in map_name:
+        x = []
+        y = []
+        id_data = {5: 10, 10: 10, 15: 10, 20: 10, 25: 10, 30: 10, 35: 10, 40: 10, 45: 10, 50: 9, 55: 8, 60: 6, 65: 6, 70: 6, 75: 4, 80: 4, 85: 4, 90: 2, 95: 1}
+        for n in range(5, 100, 5):
+            y.append(id_data[n] / 10)
+            x.append(n)
+        y.append(0)
+        x.append(100)
+        plt.plot(x, y, label='CBSH2+ID', linestyle='-.')
 
     plt.xlabel('Number of Agents')
     plt.ylabel('Completion Rate')
@@ -141,7 +152,7 @@ def make_table(data, map_name):
 
     # Rename solver, as it was misspelled in the cpp file
     if sa_solver == 'SIPP':
-        sa_solver = 'SIPPS'
+        sa_solver = 'SIPP'
 
     # Set full name
     for i, row in data.iterrows():
@@ -157,23 +168,27 @@ def make_table(data, map_name):
     data['runtime'] += data['decompTime']
     for t in thresholds:
         solver_data = data[data['DecompThreshold'] == t]
+        solver_data = solver_data[solver_data['solutionFound'] == 1]
         solver_data = solver_data[solver_data['fullSolverName'].str.contains('Decomp')]
-        solver_data = solver_data[solver_data['number of agents'].between(80, 90)]
+        solver_data = solver_data[solver_data['number of agents'].between(70, 90)]
         decomp_ratio = solver_data['decompTime'].sum() / solver_data['runtime'].sum()
         sub_instance_ratio = solver_data['MaxCompRuntime'].sum() / solver_data['runtime'].sum()
         merge_ratio = (solver_data['runtime'].sum() - solver_data['MaxCompRuntime'].sum() - solver_data['decompTime'].sum()) / solver_data['runtime'].sum()
         average_time = solver_data['runtime'].mean() + solver_data['decompTime'].mean()
+        max_comp_size = solver_data['']
+        
         # std_time = solver_data['runtime'].std()
 
         high_level_nodes = solver_data['#high-level expanded'].mean()
         
-        completion_ratio = solver_data['solutionFound'].sum() / 30
+        completion_ratio = solver_data['solutionFound'].sum() / 40
         
         print('$\\theta={:.2f}$ & {:.2f} & {:.2f} & {:.2f} & {:.2f} & {:.2f}\\\\'.format(t, completion_ratio, decomp_ratio, sub_instance_ratio, merge_ratio, average_time))
     
     solver_data = data
+    solver_data = solver_data[solver_data['solutionFound'] == 1]
     solver_data = solver_data[~solver_data['fullSolverName'].str.contains('Decomp')]
-    solver_data = solver_data[solver_data['number of agents'].between(80, 90)]
+    solver_data = solver_data[solver_data['number of agents'].between(70, 90)]
     decomp_ratio = solver_data['decompTime'].sum() / solver_data['runtime'].sum()
     sub_instance_ratio = solver_data['MaxCompRuntime'].sum() / solver_data['runtime'].sum()
     merge_ratio = (solver_data['runtime'].sum() - solver_data['MaxCompRuntime'].sum() - solver_data['decompTime'].sum()) / solver_data['runtime'].sum()
@@ -183,7 +198,7 @@ def make_table(data, map_name):
 
     high_level_nodes = solver_data['#high-level expanded'].mean()
     
-    completion_ratio = solver_data['solutionFound'].sum() / 30
+    completion_ratio = solver_data['solutionFound'].sum() / 40
 
     print('CBSH-RTC & {:.2f} & {:.2f} & {:.2f} & {:.2f} & {:.2f} \\\\'.format(completion_ratio, decomp_ratio, sub_instance_ratio, merge_ratio, average_time))
 

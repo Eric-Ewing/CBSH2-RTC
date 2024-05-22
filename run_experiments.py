@@ -23,27 +23,27 @@ def extract_args(command):
 
 def execute_command(command):
     global up_to_date
-    if not up_to_date:
-        if command == './cbs -m socs_maps/Berlin_1_256.map -a scens/Berlin_1_256-even-8.scen -o experiments/socs_experiments_v6.csv -k 45 -t 300 --decompose=true --heuristics=WDG --corridorReasoning=GC --threshold=0.1 --sipp=1':
-            up_to_date = True
-            print('match')
-            return
-        else:
-            return
-    if 'maze' in command:
-        return
+    # if not up_to_date:
+    #     if command == './cbs -m socs_maps/Berlin_1_256.map -a scens/Berlin_1_256-even-8.scen -o experiments/socs_experiments_v6.csv -k 45 -t 300 --decompose=true --heuristics=WDG --corridorReasoning=GC --threshold=0.1 --sipp=1':
+    #         up_to_date = True
+    #         print('match')
+    #         return
+    #     else:
+    #         return
+    # if 'maze' in command:
+    #     return
 
     global fails_dict
     # Check if 10 fails for any of previous n agents...
-    scen, k, rr, cr, sipp, decomp, theta = extract_args(command)
-    prev_agents = int(k) - 5
-    args_str = ''.join([scen, str(prev_agents), rr, cr, sipp, decomp, theta])
-    if args_str in fails_dict:
-        if fails_dict[args_str] >= 1:
-            print(command)
-            fails_dict[''.join([scen, k, rr, cr, sipp, decomp, theta])] = 1
-            print('exit!')
-            return
+    # scen, k, rr, cr, sipp, decomp, theta = extract_args(command)
+    # prev_agents = int(k) - 5
+    # args_str = ''.join([scen, str(prev_agents), rr, cr, sipp, decomp, theta])
+    # if args_str in fails_dict:
+    #     if fails_dict[args_str] >= 1:
+    #         print(command)
+    #         fails_dict[''.join([scen, k, rr, cr, sipp, decomp, theta])] = 1
+    #         print('exit!')
+    #         return
     # print(command)
     p = Popen('timeout 320s ' + command, shell=True, stdout=PIPE, stderr=PIPE)
     out, err = p.communicate()
@@ -58,15 +58,19 @@ def execute_command(command):
             f.write(command + '\n')
 
 
-agents = range(5, 250, 5)
+agents = range(5, 120, 5)
 rectangular_reasoning = ["WDG"]
 corridor_reasoning = ["GC"]
-use_sipp = [True, False]
-maps = glob('socs_maps/*.map')
-scens = glob('scens/*.scen')
-decompose = ["true", "false"]
+# use_sipp = [True, False]
+use_sipp = [False]
+# maps = glob('socs_maps/*.map')
+maps = ["maps/empty_210.map"]
+# scens = glob('scens/*.scen')
+scens = glob('python/unif_scen/*.scen')
+# decompose = ["true", "false"]
+decompose = ["false"]
 thresholds = np.arange(0.0, 0.3, 0.1)
-experiments_filename = "experiments/socs_experiments_v6.csv"
+experiments_filename = "empty_uniform_experiments/uniform_random.csv"
 commands = []
 
 for a in agents:
@@ -88,7 +92,8 @@ for a in agents:
                                     # command = f"./cbs -m {m} -a {s} -o {experiments_filename} -k {a} -t 300 --decompose={d} --heuristics={r} --corridorReasoning={c} --threshold={t} --sipp={sipp}"
                                     # commands.append(command)
                             else:
-                                command = f"./cbs -m {m} -a {s} -o {experiments_filename} -k {a} -t 300 --decompose={d} --heuristics={r} --corridorReasoning={c} --threshold={t} --sipp={sipp}"
+                                # command = f"./cbs -m {m} -a {s} -o {experiments_filename + str(len(commands))} -k {a} -t 300 --decompose={d} --heuristics={r} --corridorReasoning={c} --sipp={sipp}"
+                                command = f"./cbs -m maps/empty_210.map -a {s} -o {experiments_filename + str(len(commands))} -k {a} -t 30 --decompose=false --heuristics=Zero --corridorReasoning=None --rectangleReasoning=None --threshold=0.1 --sipp={sipp}"
                                 commands.append(command)
 with open('failed_experiments.txt', 'r') as f:
     try:

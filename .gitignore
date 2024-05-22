@@ -13,3 +13,10 @@ dependencies.txt
 Makefile
 test.csv
 .vscode/c_cpp_properties.json
+experiments/*
+python/bc_conflicts_figures/*
+python/unif_scen/*
+brc_uniform_experiments/*
+empty_uniform_experiments/*
+*.tree
+*.csv
