@@ -12,7 +12,6 @@
 #include "CBS.h"
 #include <fstream>
 #include <boost/filesystem.hpp>
-
 using std::ifstream;
 
 void saveDependenciesFile(vector<vector<double>> dependencies){
@@ -212,7 +211,7 @@ int main(int argc, char** argv)
 		cbs.setSavingStats(vm["stats"].as<bool>());
 		cbs.setNodeLimit(vm["nodeLimit"].as<int>());
 
-		cbs.IDSolve(100);
+		cbs.IDSolve(vm["cutoffTime"].as<double>());
 		if(!cbs.validateSolution()){
 			cout << "ID Failed..." << endl;
 		}
@@ -309,7 +308,7 @@ int main(int argc, char** argv)
 		//////////////////////////////////////////////////////////////////////
 		if (vm.count("output"))
 			cbs.saveResults(vm["output"].as<string>(), vm["agents"].as<string>()+":"+ vm["agentIdx"].as<string>());
-		// cbs2.saveCT(vm["output"].as<string>() + ".tree"); // for debug
+			// cbs.saveCT(vm["output"].as<string>() + ".tree"); // for debug
 		if (vm["stats"].as<bool>())
 		{
 			cbs.saveStats(vm["output"].as<string>(), vm["agents"].as<string>() + ":" + vm["agentIdx"].as<string>());
@@ -367,7 +366,7 @@ int main(int argc, char** argv)
 		//////////////////////////////////////////////////////////////////////
 		if (vm.count("output"))
 			cbs.saveResults(vm["output"].as<string>(), vm["agents"].as<string>()+":"+ vm["agentIdx"].as<string>());
-		// cbs.saveCT(vm["output"].as<string>() + ".tree"); // for debug
+			cbs.saveCT(vm["output"].as<string>() + ".tree"); // for debug
 		if (vm["stats"].as<bool>())
 		{
 			cbs.saveStats(vm["output"].as<string>(), vm["agents"].as<string>() + ":" + vm["agentIdx"].as<string>());

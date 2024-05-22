@@ -203,11 +203,11 @@ void CBS::computePriorityForConflict(Conflict& conflict, const CBSNode& node)
         case conflict_type::RECTANGLE:
         case conflict_type::TARGET:
         case conflict_type::MUTEX:
-            conflict.secondary_priority = get<3>(conflict.constraint1.front());
+            conflict.secondary_priority = std::get<3>(conflict.constraint1.front());
             break;
         case conflict_type::CORRIDOR:
-            conflict.secondary_priority = min(get<2>(conflict.constraint1.front()),
-                                              get<3>(conflict.constraint1.front()));
+            conflict.secondary_priority = min(std::get<2>(conflict.constraint1.front()),
+                                              std::get<3>(conflict.constraint1.front()));
             break;
     }*/
 }
@@ -639,7 +639,7 @@ void CBS::saveStats(const string &fileName, const string &instanceName) const
 	stats << "agent 1,agent 2,node id,#expanded nodes, h" << endl;
 	for (auto ins : heuristic_helper.sub_instances)
 	{
-		stats << get<0>(ins) << "," << get<1>(ins) << "," << get<2>(ins)->time_generated << "," << get<3>(ins) << "," << get<4>(ins) << endl;
+		stats << std::get<0>(ins) << "," << std::get<1>(ins) << "," << std::get<2>(ins)->time_generated << "," << std::get<3>(ins) << "," << std::get<4>(ins) << endl;
 	}
 	stats.close();
 	//cout << "Write " << heuristic_helper.sub_instances.size() << " samples to files" << endl;
@@ -650,31 +650,31 @@ void CBS::saveCT(const string &fileName) const // write the CT to a file
 {
 	std::ofstream output;
 	output.open(fileName, std::ios::out);
-	output << "digraph G {" << endl;
-	output << "size = \"5,5\";" << endl;
-	output << "center = true;" << endl;
 	for (auto node : allNodes_table)
 	{
-		output << node->time_generated << " [label=\"#" << node->time_generated 
-					<< "\ng+h="<< node->g_val << "+" << node->h_val 
-					<< "\nd=" << node->tie_breaking << "\"]" << endl;
+		// output << node->time_generated << " [label=\"#" << node->time_generated 
+		// 			<< "\ng+h="<< node->g_val << "+" << node->h_val 
+		// 			<< "\nd=" << node->tie_breaking << "\"]" << endl;
 		if (node == dummy_start)
 			continue;
-		output << node->parent->time_generated << " -> " << node->time_generated << " [label=\"";
-		for (const auto &constraint : node->constraints)
+		// output << node->parent->time_generated << " -> " << node->time_generated << " [label=\"";
+		for (const auto &constraint : node->constraints){
 			output << constraint;
-		output << "\nAgents ";
-        for (const auto &path : node->paths)
-            output << path.first << "(+" << path.second.size() - paths_found_initially[path.first].size() << ") ";
-        output << "\"]" << endl;
+		}
+			// output << constraint.
+		// output << "\nAgents ";
+        // for (const auto &path : node->paths)
+            // output << path.first << "(+" << path.second.size() - paths_found_initially[path.first].size() << ") ";
+        // output << "\"]" << endl;
+		output << endl;
 	}
-	auto node = goal_node;
-	while (node != nullptr)
-	{
-		output << node->time_generated << " [color=red]" << endl;
-		node = node->parent;
-	}
-	output << "}" << endl;
+	// auto node = goal_node;
+	// while (node != nullptr)
+	// {
+	// 	output << node->time_generated << " [color=red]" << endl;
+	// 	node = node->parent;
+	// }
+	// output << "}" << endl;
 	output.close();
 }
 
