@@ -1,7 +1,7 @@
 from glob import glob
 import numpy as np
 from tqdm.rich import tqdm
-
+import re
 from subprocess import Popen, PIPE
 
 fails_dict = {}
@@ -20,10 +20,26 @@ def extract_args(command):
 
     return scen, k, rr, cr, sipp, decomp, theta
 
+def get_prev_command(command):
+    k_value = re.search(r'-k (\d{1,3})', command)
+    if k_value:
+        k = int(re.search(r'-k (\d{1,3})', command).group(1))
+        new_k = k - 5
+        new_command = re.sub(r'-k (\d{1,3})', f'-k {new_k}', command)
+        return new_command
+    return None
 
 def execute_command(command):
-
-
+    with open('thesis_experiments/successful_experiments.txt', 'r') as f:
+        succesful_experiments = f.read()
+    with open('thesis_experiments/failed_experiments.txt', 'r') as f:
+        failed_experiments = f.read()
+    
+    if command in succesful_experiments or command in failed_experiments:
+        return
+    prev_command = get_prev_command(command)
+    if prev_command in failed_experiments:
+        return
     global fails_dict
     # Check if 10 fails for any of previous n agents...
     # scen, k, rr, cr, sipp, decomp, theta = extract_args(command)
@@ -35,7 +51,7 @@ def execute_command(command):
     #         fails_dict[''.join([scen, k, rr, cr, sipp, decomp, theta])] = 1
     #         print('exit!')
     #         return
-    print(command)
+    # print(command)
     p = Popen('timeout 320s ' + command, shell=True, stdout=PIPE, stderr=PIPE)
     out, err = p.communicate()
     if not ('Optimal' in str(out)):
@@ -43,10 +59,14 @@ def execute_command(command):
         # if key not in fails_dict:
             # fails_dict[key] = 0
         # fails_dict[key] += 1
-        print('failed!')
-        print(command)
-        with open('failed_experiments.txt', 'a') as f:
+        # print('failed!')
+        # print(command)
+        with open('thesis_experiments/failed_experiments.txt', 'a') as f:
             f.write(command + '\n')
+    else:
+        with open('thesis_experiments/successful_experiments.txt', 'a') as f:
+            f.write(command + '\n')
+
 
 
 agents = range(40, 150, 5)
@@ -99,6 +119,6 @@ with open('failed_experiments.txt', 'r') as f:
     except:
         pass
 
-print(len(commands))
+# print(len(commands))
 for c in tqdm(commands):
     execute_command(c)

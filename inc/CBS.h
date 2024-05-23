@@ -80,7 +80,7 @@ public:
     bool combineSubInstances(CBS instance2);
     void fromSubinstance(CBS subinstance, vector<int> sub_instance_agents);
 
-	vector<vector<double>> getDependencies(double cutoffTime);
+	vector<vector<int>> getDependencies(double cutoffTime, float threshold);
 	bool checkOverlap(int a1, int a2);
 	bool IDSolve(double time_limit, int cost_lowerbound = 0, int cost_upperbound = MAX_COST);
     vector<vector<int>> getComponents(vector<vector<double>> dependencies, double threshold, double cutoffTime);
