@@ -12,6 +12,9 @@
 #include "CBS.h"
 #include <fstream>
 #include <boost/filesystem.hpp>
+// #include "lib/lazy-cbs-mirror/include/lazycbs/mapf-solver.h"  // Adjust the path according to actual header file location
+// #include "lib/bcp-mapf/bcp/Includes.h"     // Adjust the path according to actual header file location
+
 using std::ifstream;
 
 void saveDependenciesFile(vector<vector<double>> dependencies){
@@ -24,12 +27,12 @@ void saveDependenciesFile(vector<vector<double>> dependencies){
 }
 
 void saveComponentsFile(vector<vector<int>> components, string filenameComponents, double time, string filenameTime){
-	if (boost::filesystem::exists(filenameComponents)){
-		cout << filenameComponents << endl;
-		return;
-	}
-	else{
-		cout << filenameComponents << endl;
+	// if (boost::filesystem::exists(filenameComponents)){
+	// 	cout << filenameComponents << endl;
+	// 	return;
+	// }
+	// else{
+		// cout << filenameComponents << endl;
 		ofstream f(filenameComponents.c_str());
 		for (auto component : components){
 			for (int agent : component){
@@ -37,9 +40,9 @@ void saveComponentsFile(vector<vector<int>> components, string filenameComponent
 			}
 			f << endl;
 		}
-	}
-	ofstream f(filenameTime.c_str());
-	f << time;
+	// }
+	ofstream g(filenameTime.c_str());
+	g << "Decomp time: " << time << std::endl;
 }
 
 vector<vector<int>> loadComponentsFile(const string &filename) {
@@ -236,30 +239,17 @@ int main(int argc, char** argv)
 		
 		double dependencyThreshold = vm["threshold"].as<double>();
 		
-		string cacheComponentsFile = "components/" + vm["agents"].as<string>() + std::to_string(vm["agentNum"].as<int>())+std::to_string(vm["threshold"].as<double>())+ ".components";
-		string timingComponentsFile = "components/" + vm["agents"].as<string>() + std::to_string(vm["agentNum"].as<int>())+std::to_string(vm["threshold"].as<double>())+ ".timing";
+		string cacheComponentsFile = "thesis_components/" + vm["agents"].as<string>() + "_" + std::to_string(vm["agentNum"].as<int>())+"_"+std::to_string(vm["threshold"].as<double>())+ ".components";
+		string timingComponentsFile = "thesis_components/" + vm["agents"].as<string>() + "_" + std::to_string(vm["agentNum"].as<int>())+"_"+std::to_string(vm["threshold"].as<double>())+ ".timing";
 		ifstream f(cacheComponentsFile.c_str());
-		vector<vector<int>> componentsOfAgents;
 		double decompTime = 0;
 		clock_t start = clock();
-		if (boost::filesystem::exists(cacheComponentsFile)){
-			cout << "Loaded!" << endl;
-			componentsOfAgents = loadComponentsFile(cacheComponentsFile);
-			decompTime = loadTimingFile(timingComponentsFile);
-		}
-		else{
-			vector<vector<double>> dependencies = cbs.getDependencies(vm["cutoffTime"].as<double>()*12);
-			decompTime = (double) (clock() - start) / CLOCKS_PER_SEC;
-			cout << "Made dependencies!" << decompTime << endl;
-			componentsOfAgents = cbs.getComponents(dependencies, dependencyThreshold, vm["cutoffTime"].as<double>()*12);
-			decompTime = (double) (clock() - start) / CLOCKS_PER_SEC;
-			cout << "Made Components" << decompTime << endl;
-			saveComponentsFile(componentsOfAgents, cacheComponentsFile, decompTime, timingComponentsFile);
-			cout << "saved!" << endl;
-			cout << "Loaded!" << endl;
-			componentsOfAgents = loadComponentsFile(cacheComponentsFile);
-			decompTime = loadTimingFile(timingComponentsFile);
-		}
+
+		vector<vector<int>> componentsOfAgents = cbs.getDependencies(vm["cutoffTime"].as<double>()*12, dependencyThreshold);
+		decompTime = (double) (clock() - start) / CLOCKS_PER_SEC;
+		// componentsOfAgents = cbs.getComponents(dependencies, dependencyThreshold, vm["cutoffTime"].as<double>()*12);
+		decompTime = (double) (clock() - start) / CLOCKS_PER_SEC;
+		saveComponentsFile(componentsOfAgents, cacheComponentsFile, decompTime, timingComponentsFile);
 		int min_f_value = 0;
 		vector<CBS> solvers = vector<CBS>();
 
@@ -283,13 +273,20 @@ int main(int argc, char** argv)
 			if (!cbsSubinstance.solution_found){
 				cout << "Solving Failed Subinstance" << endl;
 				cbsSubinstance.saveResults(vm["output"].as<string>(), vm["agents"].as<string>()+":"+ vm["agentIdx"].as<string>());
-				exit(1);
+				ofstream f(timingComponentsFile.c_str());
+				f << -1 << std::endl;
 			}
-			min_f_value += cbsSubinstance.min_f_val; //update min f value
-			solvers.emplace_back(cbsSubinstance); // update all solvers
-			cbs.initialRuntime += cbsSubinstance.runtime; // update runtime
-			cbs.fromSubinstance(cbsSubinstance, component); // add solved paths of sub-instances
-			cbs.maxCompRuntime = max(cbsSubinstance.runtime, cbs.maxCompRuntime);
+			else{
+				min_f_value += cbsSubinstance.min_f_val; //update min f value
+				solvers.emplace_back(cbsSubinstance); // update all solvers
+				cbs.initialRuntime += cbsSubinstance.runtime; // update runtime
+				cbs.fromSubinstance(cbsSubinstance, component); // add solved paths of sub-instances
+				cbs.maxCompRuntime = max(cbsSubinstance.runtime, cbs.maxCompRuntime);
+				ofstream f;
+				f.open(timingComponentsFile.c_str(), std::ios::app);
+				f << cbsSubinstance.runtime << std::endl;
+				f.close();
+			}
 		}
 		cbs.decompTime = decompTime;
 		cbs.decomp = true;
@@ -298,6 +295,7 @@ int main(int argc, char** argv)
 		/// run
 		//////////////////////////////////////////////////////////////////////
 		double runtime = 0;
+		cout << "solving entire thing" << endl;
 		cbs.solve(vm["cutoffTime"].as<double>() - decompTime, min_f_value);
 		cbs.solution_found &= cbs.validateSolution();
 		
@@ -366,7 +364,7 @@ int main(int argc, char** argv)
 		//////////////////////////////////////////////////////////////////////
 		if (vm.count("output"))
 			cbs.saveResults(vm["output"].as<string>(), vm["agents"].as<string>()+":"+ vm["agentIdx"].as<string>());
-			cbs.saveCT(vm["output"].as<string>() + ".tree"); // for debug
+			// cbs.saveCT(vm["output"].as<string>() + ".tree"); // for debug
 		if (vm["stats"].as<bool>())
 		{
 			cbs.saveStats(vm["output"].as<string>(), vm["agents"].as<string>() + ":" + vm["agentIdx"].as<string>());

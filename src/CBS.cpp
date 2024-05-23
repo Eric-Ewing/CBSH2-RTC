@@ -855,7 +855,8 @@ bool CBS::checkOverlap(int a1, int a2){
 	}
 }
 
-vector<vector<double>> CBS::getDependencies(double cutoffTime){
+vector<vector<int>> CBS::getDependencies(double cutoffTime, float threshold){
+	unordered_map<int, unordered_set<int>*> setMembership = unordered_map<int, unordered_set<int>*>();
 	generateRoot();
 	double start = clock();
 	auto curr = focal_list.top();
@@ -873,19 +874,81 @@ vector<vector<double>> CBS::getDependencies(double cutoffTime){
 		dependencies[i].resize(mdds.size());
 		// dependencies[i] = vector<double>(mdds.size());
 		for (int j = i+1; j < mdds.size(); j++){
+			int a1 = i;
+			int a2 = j;
+			
+			if (setMembership.find(a1) != setMembership.end() && setMembership.find(a2) != setMembership.end() && setMembership[a2] == setMembership[a1]){
+				// Already in same component, skip
+				// cout << "skipping " << a1 << ", " << a2 << endl;
+				continue;
+			}
 			if ((double) (clock() - start) / CLOCKS_PER_SEC > cutoffTime){
-				return dependencies;
+				// cout << "term" << endl;
+				return vector<vector<int>>();
 			}
 			if (checkOverlap(i, j)){
 				double dependence = heuristic_helper.quantifyDependence(i, j, *focal_list.top());
 				dependencies[i][j] = dependence;
+				// cout << i << ", " << j << ": " << dependence << endl;
+				if (dependence > threshold){
+					if (setMembership.find(a1) == setMembership.end() && setMembership.find(a2) == setMembership.end()){
+						// If neither agent exists, make new singleton components for each
+						unordered_set<int>* component = new unordered_set<int>();
+						component->insert(a1);
+						component->insert(a2);
+						setMembership.insert(pair<int, unordered_set<int>*>(a1, component));
+						setMembership.insert(pair<int, unordered_set<int>*>(a2, component));
+					}
+					else if(setMembership.find(a1) == setMembership.end()){
+						// if one exists, but not the other, add to existing set
+						unordered_set<int>* component = setMembership[a2];
+						component->insert(a1);
+						setMembership.insert(pair<int, unordered_set<int>*>(a1, component));
+					}
+					else if(setMembership.find(a2) == setMembership.end()){
+						unordered_set<int>* component = setMembership[a1];
+						component->insert(a2);
+						setMembership[a2] = setMembership[a1];
+					}
+					else{
+						// Merge two components
+						unordered_set<int>* component1 = setMembership.find(a1)->second;
+						unordered_set<int>* component2 = setMembership.find(a2)->second;
+						if (component1 != component2){
+							for (int agent: *component1){
+								component2->insert(agent);
+								setMembership[agent] = component2;
+								// component1->erase(agent);
+							}
+						}
+					}
+				}
 			}
 			else{
 				dependencies[i][j] = 0;
 			}
 		}
 	}
-	return  dependencies;
+	vector<vector<int>> components;
+	unordered_map<int, bool> alreadyCounted;
+	for (auto kv : setMembership){
+		int agent = kv.first;
+		unordered_set<int>* component = kv.second;
+		vector<int> componentAgents;
+		if (!component->empty()){
+			for (auto itr = component->begin(); itr != component->end(); itr++){
+				if (alreadyCounted.find(*itr) == alreadyCounted.end()){
+					componentAgents.emplace_back(*itr);
+					alreadyCounted[*itr] = true;
+				}
+			}
+		}
+		sort(componentAgents.begin(), componentAgents.end());
+		if(componentAgents.size() > 0){
+			components.emplace_back(componentAgents);
+		}
+	}
+	return components;
 
 }
 

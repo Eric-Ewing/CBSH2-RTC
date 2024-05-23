@@ -22,16 +22,7 @@ def extract_args(command):
 
 
 def execute_command(command):
-    global up_to_date
-    # if not up_to_date:
-    #     if command == './cbs -m socs_maps/Berlin_1_256.map -a scens/Berlin_1_256-even-8.scen -o experiments/socs_experiments_v6.csv -k 45 -t 300 --decompose=true --heuristics=WDG --corridorReasoning=GC --threshold=0.1 --sipp=1':
-    #         up_to_date = True
-    #         print('match')
-    #         return
-    #     else:
-    #         return
-    # if 'maze' in command:
-    #     return
+
 
     global fails_dict
     # Check if 10 fails for any of previous n agents...
@@ -44,33 +35,33 @@ def execute_command(command):
     #         fails_dict[''.join([scen, k, rr, cr, sipp, decomp, theta])] = 1
     #         print('exit!')
     #         return
-    # print(command)
+    print(command)
     p = Popen('timeout 320s ' + command, shell=True, stdout=PIPE, stderr=PIPE)
     out, err = p.communicate()
     if not ('Optimal' in str(out)):
-        key = ''.join([scen, k, rr, cr, sipp, decomp, theta])
-        if key not in fails_dict:
-            fails_dict[key] = 0
-        fails_dict[key] += 1
+        # key = ''.join([scen, k, rr, cr, sipp, decomp, theta])
+        # if key not in fails_dict:
+            # fails_dict[key] = 0
+        # fails_dict[key] += 1
         print('failed!')
         print(command)
         with open('failed_experiments.txt', 'a') as f:
             f.write(command + '\n')
 
 
-agents = range(5, 120, 5)
+agents = range(40, 150, 5)
 rectangular_reasoning = ["WDG"]
 corridor_reasoning = ["GC"]
 # use_sipp = [True, False]
 use_sipp = [False]
-# maps = glob('socs_maps/*.map')
-maps = ["maps/empty_210.map"]
-# scens = glob('scens/*.scen')
-scens = glob('python/unif_scen/*.scen')
-# decompose = ["true", "false"]
-decompose = ["false"]
+maps = glob('socs_maps/*.map')
+# maps = ["maps/empty_210.map"]
+scens = glob('scens/*.scen')
+# scens = glob('python/unif_scen/*.scen')
+decompose = ["true", "false"]
+# decompose = ["false"]
 thresholds = np.arange(0.0, 0.3, 0.1)
-experiments_filename = "empty_uniform_experiments/uniform_random.csv"
+experiments_filename = "thesis_experiments/cbsh.csv"
 commands = []
 
 for a in agents:
@@ -87,14 +78,15 @@ for a in agents:
                         for d in decompose:
                             if d == "true":
                                 for t in thresholds:
-                                    command = f"./cbs -m {m} -a {s} -o {experiments_filename} -k {a} -t 300 --decompose={d} --heuristics={r} --corridorReasoning={c} --threshold={t} --sipp={sipp}"
+                                    command = f"./cbs -m {m} -a {s} -o {experiments_filename} -k {a} -t 100 --decompose={d} --heuristics={r} --corridorReasoning={c} --threshold={t} --sipp={sipp}"
                                     commands.append(command) 
                                     # command = f"./cbs -m {m} -a {s} -o {experiments_filename} -k {a} -t 300 --decompose={d} --heuristics={r} --corridorReasoning={c} --threshold={t} --sipp={sipp}"
                                     # commands.append(command)
                             else:
-                                # command = f"./cbs -m {m} -a {s} -o {experiments_filename + str(len(commands))} -k {a} -t 300 --decompose={d} --heuristics={r} --corridorReasoning={c} --sipp={sipp}"
-                                command = f"./cbs -m maps/empty_210.map -a {s} -o {experiments_filename + str(len(commands))} -k {a} -t 30 --decompose=false --heuristics=Zero --corridorReasoning=None --rectangleReasoning=None --threshold=0.1 --sipp={sipp}"
+                                command = f"./cbs -m {m} -a {s} -o {experiments_filename} -k {a} -t 100 --decompose={d} --heuristics={r} --corridorReasoning={c} --sipp={sipp}"
+                                # command = f"./cbs -m maps/empty_210.map -a {s} -o {experiments_filename + str(len(commands))} -k {a} -t 30 --decompose=false --heuristics=Zero --corridorReasoning=None --rectangleReasoning=None --threshold=0.1 --sipp={sipp}"
                                 commands.append(command)
+
 with open('failed_experiments.txt', 'r') as f:
     try:
         while True:

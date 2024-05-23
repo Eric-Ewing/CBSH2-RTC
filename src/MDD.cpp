@@ -486,7 +486,7 @@ MDD* MDDTable::getMDD(CBSNode& node, int id, size_t mdd_levels)
 	if (got != lookupTable[c.a].end() && got->second->levels.size() == mdd_levels)
 	{
 		// assert(got->second->levels.size() == mdd_levels);
-		return got->second;
+		// return got->second;
 	}
 	}
 	releaseMDDMemory(id);
