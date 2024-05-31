@@ -122,11 +122,16 @@ shared_ptr<Conflict> CorridorReasoning::findPseudoCorridorConflict(const shared_
 	int  agent, loc1, loc2, timestep;
 	constraint_type type;
 	tie(agent, loc1, loc2, timestep, type) = conflict->constraint1.back();
+	if (timestep == 0){
+		return nullptr;
+	}
 	int endpoint1, endpoint2, lowerbound1, lowerbound2; // the timestep of the range constraint at the endpoint should be >= the lowerbound
 	if (loc2 < 0) // vertex conflict
 	{
 		if (paths[conflict->a1]->size() <= timestep + 1 || paths[conflict->a2]->size() <= timestep + 1)
 			return nullptr;
+		// cout << paths[conflict->a2]->at(timestep + 1).location << endl;
+		// cout << paths[conflict->a1]->at(timestep + 1).location << endl;
 		if (paths[conflict->a1]->at(timestep - 1).location != paths[conflict->a2]->at(timestep + 1).location ||
 			paths[conflict->a2]->at(timestep - 1).location != paths[conflict->a1]->at(timestep + 1).location)
 			return nullptr;

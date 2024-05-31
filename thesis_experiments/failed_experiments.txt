@@ -1,0 +1,5 @@
+./cbs -m socs_maps/empty-48-48.map -a scens/bimodal_scens/empty-48-48-bimodal-8.scen -o thesis_experiments/cbsh_bimodal2.csv -k 30 -t 100 --decompose=true --heuristics=WDG --corridorReasoning=GC --threshold=0.0 --sipp=0
+./cbs -m socs_maps/empty-48-48.map -a scens/bimodal_scens/empty-48-48-bimodal-8.scen -o thesis_experiments/cbsh_bimodal2.csv -k 30 -t 100 --decompose=true --heuristics=WDG --corridorReasoning=GC --threshold=0.1 --sipp=0
+./cbs -m socs_maps/empty-48-48.map -a scens/bimodal_scens/empty-48-48-bimodal-8.scen -o thesis_experiments/cbsh_bimodal2.csv -k 30 -t 100 --decompose=true --heuristics=WDG --corridorReasoning=GC --threshold=0.2 --sipp=0
+./cbs -m socs_maps/empty-48-48.map -a scens/bimodal_scens/empty-48-48-bimodal-8.scen -o thesis_experiments/cbsh_bimodal2.csv -k 30 -t 100 --decompose=false --heuristics=WDG --corridorReasoning=GC --sipp=0
+./cbs -m socs_maps/empty-48-48.map -a scens/bimodal_scens/empty-48-48-bimodal-8.scen -o thesis_experiments/cbsh_bimodal2.csv -k 35 -t 100 --decompose=true --heuristics=WDG --corridorReasoning=GC --threshold=0.0 --sipp=0

@@ -102,6 +102,8 @@ int main(int argc, char** argv)
 		("stats", po::value<bool>()->default_value(false), "write to files some statistics")
 		("agentIdx", po::value<string>()->default_value(""), "customize the indices of the agents (e.g., \"0,1\")")
 
+		("componentsOnly,c", po::value<bool>()->default_value(false), "only compute decomposition...")
+
 		// params for instance generators
 		("rows", po::value<int>()->default_value(0), "number of rows")
 		("cols", po::value<int>()->default_value(0), "number of columns")
@@ -197,7 +199,6 @@ int main(int argc, char** argv)
 		vm["rows"].as<int>(), vm["cols"].as<int>(), vm["obs"].as<int>(), vm["warehouseWidth"].as<int>());
 
 	srand(vm["seed"].as<int>());
-
 	int runs = vm["restart"].as<int>();
 	if (vm["ID"].as<bool>()){
 		cout << "Starting ID solver..." << endl;
@@ -218,6 +219,35 @@ int main(int argc, char** argv)
 		if(!cbs.validateSolution()){
 			cout << "ID Failed..." << endl;
 		}
+	}
+	else if (vm["componentsOnly"].as<bool>()){
+		CBS cbs(originalInstance, vm["sipp"].as<bool>(), vm["screen"].as<int>());
+		// CBS cbs(instance, vm["sipp"].as<bool>(), vm["screen"].as<int>());
+		cbs.setPrioritizeConflicts(vm["prioritizingConflicts"].as<bool>());
+		cbs.setDisjointSplitting(vm["disjointSplitting"].as<bool>());
+		cbs.setBypass(vm["bypass"].as<bool>());
+		cbs.setRectangleReasoning(r);
+		cbs.setCorridorReasoning(c);
+		cbs.setHeuristicType(h);
+		cbs.setTargetReasoning(vm["targetReasoning"].as<bool>());
+		cbs.setMutexReasoning(vm["mutexReasoning"].as<bool>());
+		cbs.setSavingStats(vm["stats"].as<bool>());
+		cbs.setNodeLimit(vm["nodeLimit"].as<int>());
+		
+		double dependencyThreshold = vm["threshold"].as<double>();
+		
+		string cacheComponentsFile = "thesis_components/" + vm["agents"].as<string>() + "_" + std::to_string(vm["agentNum"].as<int>())+"_"+std::to_string(vm["threshold"].as<double>())+ ".components";
+		string timingComponentsFile = "thesis_components/" + vm["agents"].as<string>() + "_" + std::to_string(vm["agentNum"].as<int>())+"_"+std::to_string(vm["threshold"].as<double>())+ ".timing";
+		ifstream f(cacheComponentsFile.c_str());
+		double decompTime = 0;
+		clock_t start = clock();
+
+		vector<vector<int>> componentsOfAgents = cbs.getDependencies(vm["cutoffTime"].as<double>()*12, dependencyThreshold);
+		// decompTime = (double) (clock() - start) / CLOCKS_PER_SEC;
+		// componentsOfAgents = cbs.getComponents(dependencies, dependencyThreshold, vm["cutoffTime"].as<double>()*12);
+		decompTime = (double) (clock() - start) / CLOCKS_PER_SEC;
+		saveComponentsFile(componentsOfAgents, cacheComponentsFile, decompTime, timingComponentsFile);
+		exit(0);
 	}
 	else if (vm["decompose"].as<bool>()){
 		//////////////////////////////////////////////////////////////////////
@@ -246,10 +276,11 @@ int main(int argc, char** argv)
 		clock_t start = clock();
 
 		vector<vector<int>> componentsOfAgents = cbs.getDependencies(vm["cutoffTime"].as<double>()*12, dependencyThreshold);
-		decompTime = (double) (clock() - start) / CLOCKS_PER_SEC;
+		// decompTime = (double) (clock() - start) / CLOCKS_PER_SEC;
 		// componentsOfAgents = cbs.getComponents(dependencies, dependencyThreshold, vm["cutoffTime"].as<double>()*12);
 		decompTime = (double) (clock() - start) / CLOCKS_PER_SEC;
 		saveComponentsFile(componentsOfAgents, cacheComponentsFile, decompTime, timingComponentsFile);
+		start = clock(); // just to test how we do without decomp...
 		int min_f_value = 0;
 		vector<CBS> solvers = vector<CBS>();
 
@@ -288,6 +319,7 @@ int main(int argc, char** argv)
 				f.close();
 			}
 		}
+		start = clock();
 		cbs.decompTime = decompTime;
 		cbs.decomp = true;
 		cbs.decompThreshold = dependencyThreshold;
@@ -296,7 +328,7 @@ int main(int argc, char** argv)
 		//////////////////////////////////////////////////////////////////////
 		double runtime = 0;
 		cout << "solving entire thing" << endl;
-		cbs.solve(vm["cutoffTime"].as<double>() - decompTime, min_f_value);
+		cbs.solve(vm["cutoffTime"].as<double>(), min_f_value);
 		cbs.solution_found &= cbs.validateSolution();
 		
 

@@ -35,12 +35,20 @@ def execute_command(command):
     with open('thesis_experiments/failed_experiments.txt', 'r') as f:
         failed_experiments = f.read()
     
-    if command in succesful_experiments or command in failed_experiments:
-        return
-    prev_command = get_prev_command(command)
-    if prev_command in failed_experiments:
-        return
-    global fails_dict
+    if command in succesful_experiments:
+        pass
+        # return # Still solve because I forgot...
+    if command in failed_experiments:
+        pass
+        # return
+    # prev_command = get_prev_command(command)
+    # if prev_command in failed_experiments:
+    #     command += ' -c 1'
+    #     p = Popen(command, shell=True, stdout=PIPE, stderr=PIPE)
+    #     out, err = p.communicate()
+    #     with open('thesis_experiments/failed_experiments.txt', 'a') as f:
+    #         f.write(command + '\n')
+    #     return
     # Check if 10 fails for any of previous n agents...
     # scen, k, rr, cr, sipp, decomp, theta = extract_args(command)
     # prev_agents = int(k) - 5
@@ -69,19 +77,19 @@ def execute_command(command):
 
 
 
-agents = range(40, 150, 5)
+agents = range(5, 200, 5)
 rectangular_reasoning = ["WDG"]
 corridor_reasoning = ["GC"]
 # use_sipp = [True, False]
 use_sipp = [False]
 maps = glob('socs_maps/*.map')
 # maps = ["maps/empty_210.map"]
-scens = glob('scens/*.scen')
+scens = glob('scens/bimodal_scens/*.scen')
 # scens = glob('python/unif_scen/*.scen')
 decompose = ["true", "false"]
 # decompose = ["false"]
 thresholds = np.arange(0.0, 0.3, 0.1)
-experiments_filename = "thesis_experiments/cbsh.csv"
+experiments_filename = "thesis_experiments/cbsh_bimodal2.csv"
 commands = []
 
 for a in agents:
@@ -107,17 +115,6 @@ for a in agents:
                                 # command = f"./cbs -m maps/empty_210.map -a {s} -o {experiments_filename + str(len(commands))} -k {a} -t 30 --decompose=false --heuristics=Zero --corridorReasoning=None --rectangleReasoning=None --threshold=0.1 --sipp={sipp}"
                                 commands.append(command)
 
-with open('failed_experiments.txt', 'r') as f:
-    try:
-        while True:
-            command = f.readline()
-            scen, k, rr, cr, sipp, decomp, theta = extract_args(command)
-            key = ''.join([scen, k, rr, cr, sipp, decomp, theta])
-            if key not in fails_dict:
-                fails_dict[key] = 0
-            fails_dict[key] += 1
-    except:
-        pass
 
 # print(len(commands))
 for c in tqdm(commands):

@@ -1,0 +1,527 @@
+agents:
+- goal:
+  - 26
+  - 234
+  name: agent0
+  start:
+  - 247
+  - 17
+- goal:
+  - 25
+  - 248
+  name: agent1
+  start:
+  - 166
+  - 19
+- goal:
+  - 248
+  - 122
+  name: agent2
+  start:
+  - 127
+  - 228
+- goal:
+  - 52
+  - 64
+  name: agent3
+  start:
+  - 176
+  - 184
+- goal:
+  - 28
+  - 32
+  name: agent4
+  start:
+  - 56
+  - 155
+- goal:
+  - 154
+  - 242
+  name: agent5
+  start:
+  - 155
+  - 200
+- goal:
+  - 129
+  - 210
+  name: agent6
+  start:
+  - 22
+  - 67
+- goal:
+  - 135
+  - 233
+  name: agent7
+  start:
+  - 254
+  - 30
+- goal:
+  - 245
+  - 149
+  name: agent8
+  start:
+  - 56
+  - 146
+- goal:
+  - 59
+  - 202
+  name: agent9
+  start:
+  - 38
+  - 2
+- goal:
+  - 110
+  - 104
+  name: agent10
+  start:
+  - 98
+  - 86
+- goal:
+  - 251
+  - 169
+  name: agent11
+  start:
+  - 72
+  - 240
+- goal:
+  - 249
+  - 184
+  name: agent12
+  start:
+  - 70
+  - 18
+- goal:
+  - 252
+  - 43
+  name: agent13
+  start:
+  - 52
+  - 224
+- goal:
+  - 2
+  - 91
+  name: agent14
+  start:
+  - 243
+  - 249
+- goal:
+  - 248
+  - 172
+  name: agent15
+  start:
+  - 216
+  - 114
+- goal:
+  - 242
+  - 118
+  name: agent16
+  start:
+  - 40
+  - 227
+- goal:
+  - 156
+  - 10
+  name: agent17
+  start:
+  - 250
+  - 61
+- goal:
+  - 23
+  - 27
+  name: agent18
+  start:
+  - 53
+  - 150
+- goal:
+  - 41
+  - 134
+  name: agent19
+  start:
+  - 254
+  - 228
+- goal:
+  - 156
+  - 205
+  name: agent20
+  start:
+  - 170
+  - 181
+- goal:
+  - 67
+  - 0
+  name: agent21
+  start:
+  - 214
+  - 198
+- goal:
+  - 196
+  - 175
+  name: agent22
+  start:
+  - 174
+  - 253
+- goal:
+  - 4
+  - 236
+  name: agent23
+  start:
+  - 191
+  - 0
+- goal:
+  - 56
+  - 244
+  name: agent24
+  start:
+  - 152
+  - 112
+- goal:
+  - 139
+  - 90
+  name: agent25
+  start:
+  - 193
+  - 78
+- goal:
+  - 99
+  - 13
+  name: agent26
+  start:
+  - 246
+  - 237
+- goal:
+  - 7
+  - 18
+  name: agent27
+  start:
+  - 204
+  - 254
+- goal:
+  - 248
+  - 90
+  name: agent28
+  start:
+  - 16
+  - 0
+- goal:
+  - 77
+  - 214
+  name: agent29
+  start:
+  - 67
+  - 170
+- goal:
+  - 71
+  - 20
+  name: agent30
+  start:
+  - 253
+  - 228
+- goal:
+  - 234
+  - 123
+  name: agent31
+  start:
+  - 38
+  - 240
+- goal:
+  - 165
+  - 240
+  name: agent32
+  start:
+  - 155
+  - 225
+- goal:
+  - 128
+  - 163
+  name: agent33
+  start:
+  - 52
+  - 92
+- goal:
+  - 127
+  - 172
+  name: agent34
+  start:
+  - 129
+  - 161
+- goal:
+  - 235
+  - 212
+  name: agent35
+  start:
+  - 57
+  - 15
+- goal:
+  - 133
+  - 189
+  name: agent36
+  start:
+  - 23
+  - 110
+- goal:
+  - 7
+  - 1
+  name: agent37
+  start:
+  - 225
+  - 235
+- goal:
+  - 22
+  - 207
+  name: agent38
+  start:
+  - 190
+  - 41
+- goal:
+  - 17
+  - 121
+  name: agent39
+  start:
+  - 250
+  - 159
+- goal:
+  - 190
+  - 121
+  name: agent40
+  start:
+  - 17
+  - 94
+- goal:
+  - 47
+  - 3
+  name: agent41
+  start:
+  - 253
+  - 248
+- goal:
+  - 45
+  - 210
+  name: agent42
+  start:
+  - 138
+  - 44
+- goal:
+  - 53
+  - 245
+  name: agent43
+  start:
+  - 255
+  - 64
+- goal:
+  - 55
+  - 194
+  name: agent44
+  start:
+  - 4
+  - 231
+- goal:
+  - 20
+  - 134
+  name: agent45
+  start:
+  - 73
+  - 236
+- goal:
+  - 185
+  - 245
+  name: agent46
+  start:
+  - 24
+  - 8
+- goal:
+  - 32
+  - 233
+  name: agent47
+  start:
+  - 138
+  - 187
+- goal:
+  - 2
+  - 213
+  name: agent48
+  start:
+  - 187
+  - 50
+- goal:
+  - 70
+  - 155
+  name: agent49
+  start:
+  - 16
+  - 76
+- goal:
+  - 172
+  - 143
+  name: agent50
+  start:
+  - 26
+  - 208
+- goal:
+  - 38
+  - 239
+  name: agent51
+  start:
+  - 151
+  - 80
+- goal:
+  - 94
+  - 202
+  name: agent52
+  start:
+  - 132
+  - 233
+- goal:
+  - 186
+  - 71
+  name: agent53
+  start:
+  - 117
+  - 85
+- goal:
+  - 153
+  - 219
+  name: agent54
+  start:
+  - 153
+  - 245
+- goal:
+  - 182
+  - 212
+  name: agent55
+  start:
+  - 247
+  - 242
+- goal:
+  - 250
+  - 202
+  name: agent56
+  start:
+  - 108
+  - 32
+- goal:
+  - 40
+  - 202
+  name: agent57
+  start:
+  - 245
+  - 16
+- goal:
+  - 224
+  - 26
+  name: agent58
+  start:
+  - 104
+  - 41
+- goal:
+  - 170
+  - 188
+  name: agent59
+  start:
+  - 82
+  - 169
+- goal:
+  - 120
+  - 20
+  name: agent60
+  start:
+  - 239
+  - 246
+- goal:
+  - 192
+  - 48
+  name: agent61
+  start:
+  - 182
+  - 49
+- goal:
+  - 13
+  - 28
+  name: agent62
+  start:
+  - 249
+  - 212
+- goal:
+  - 166
+  - 17
+  name: agent63
+  start:
+  - 34
+  - 48
+- goal:
+  - 57
+  - 177
+  name: agent64
+  start:
+  - 103
+  - 32
+- goal:
+  - 117
+  - 249
+  name: agent65
+  start:
+  - 132
+  - 41
+- goal:
+  - 153
+  - 107
+  name: agent66
+  start:
+  - 120
+  - 130
+- goal:
+  - 210
+  - 188
+  name: agent67
+  start:
+  - 62
+  - 36
+- goal:
+  - 31
+  - 230
+  name: agent68
+  start:
+  - 252
+  - 26
+- goal:
+  - 35
+  - 72
+  name: agent69
+  start:
+  - 238
+  - 143
+- goal:
+  - 148
+  - 50
+  name: agent70
+  start:
+  - 191
+  - 20
+- goal:
+  - 99
+  - 150
+  name: agent71
+  start:
+  - 44
+  - 161
+- goal:
+  - 231
+  - 117
+  name: agent72
+  start:
+  - 168
+  - 225
+- goal:
+  - 131
+  - 4
+  name: agent73
+  start:
+  - 6
+  - 241
+- goal:
+  - 27
+  - 106
+  name: agent74
+  start:
+  - 128
+  - 44
+map_path: ../yaml_maps/Berlin_1_256.map
